@@ -40,59 +40,56 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <TabControl Grid.Row="1">
-            <TabItem Header="Markdown">
-                <md:MarkdownScrollViewer Margin="10" IsEnabled="{Binding !IsBusy}" Markdown="{Binding Content}">
-                    <md:MarkdownScrollViewer.Styles>
-                        <Style Selector="ctxt|CTextBlock">
-                            <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
-                        </Style>
-                        <Style Selector="ctxt|CTextBlock.Heading1">
-                            <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
-                        </Style>
-                        <Style Selector="ctxt|CTextBlock.Heading2">
-                            <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
-                        </Style>
-                        <Style Selector="ctxt|CTextBlock.Heading3">
-                            <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
-                        </Style>
-                        <Style Selector="ctxt|CTextBlock.Heading4">
-                            <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
-                        </Style>
-                        <Style Selector="ctxt|CTextBlock.Heading5">
-                            <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
-                        </Style>
-                        <Style Selector="ctxt|CTextBlock.Heading6">
-                            <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
-                        </Style>
-                        <Style Selector="ctxt|CHyperlink">
-                            <Setter Property="Foreground" Value="{DynamicResource SemiColorLink}" />
-                        </Style>
-                        <Style Selector="ctxt|CHyperlink:pointerover">
-                            <Setter Property="Foreground" Value="{DynamicResource SemiColorLinkPointerover}" />
-                        </Style>
-                        <Style Selector="ctxt|CHyperlink:pressed">
-                            <Setter Property="Foreground" Value="{DynamicResource SemiColorLinkVisited}" />
-                        </Style>
-                        <Style Selector="ctxt|CImage">
-                            <Setter Property="FittingWhenProtrude" Value="True" />
-                            <Setter Property="LayoutWidth" Value="500" />
-                            <Setter Property="SaveAspectRatio" Value="True" />
-                        </Style>
-                    </md:MarkdownScrollViewer.Styles>
-                    <md:MarkdownScrollViewer.Plugins>
-                        <md:MdAvPlugins PathResolver="{StaticResource HttpPathResolver}" HyperlinkCommand="{StaticResource HyperlinkCommand}" />
-                    </md:MarkdownScrollViewer.Plugins>
-                </md:MarkdownScrollViewer>
-            </TabItem>
-            <TabItem Header="Raw">
-                <ScrollViewer Margin="10">
-                    <TextBlock Text="{Binding Content}" />
-                </ScrollViewer>
-            </TabItem>
-        </TabControl>
+        <Grid ColumnDefinitions="*, 4, *" Grid.Row="1">
+            <md:MarkdownScrollViewer Margin="10" IsEnabled="{Binding !IsBusy}" Markdown="{Binding Content}">
+                <md:MarkdownScrollViewer.Styles>
+                    <Style Selector="ctxt|CTextBlock">
+                        <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
+                    </Style>
+                    <Style Selector="ctxt|CTextBlock.Heading1">
+                        <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
+                    </Style>
+                    <Style Selector="ctxt|CTextBlock.Heading2">
+                        <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
+                    </Style>
+                    <Style Selector="ctxt|CTextBlock.Heading3">
+                        <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
+                    </Style>
+                    <Style Selector="ctxt|CTextBlock.Heading4">
+                        <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
+                    </Style>
+                    <Style Selector="ctxt|CTextBlock.Heading5">
+                        <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
+                    </Style>
+                    <Style Selector="ctxt|CTextBlock.Heading6">
+                        <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
+                    </Style>
+                    <Style Selector="ctxt|CHyperlink">
+                        <Setter Property="Foreground" Value="{DynamicResource SemiColorLink}" />
+                    </Style>
+                    <Style Selector="ctxt|CHyperlink:pointerover">
+                        <Setter Property="Foreground" Value="{DynamicResource SemiColorLinkPointerover}" />
+                    </Style>
+                    <Style Selector="ctxt|CHyperlink:pressed">
+                        <Setter Property="Foreground" Value="{DynamicResource SemiColorLinkVisited}" />
+                    </Style>
+                    <Style Selector="ctxt|CImage">
+                        <Setter Property="FittingWhenProtrude" Value="True" />
+                        <Setter Property="LayoutWidth" Value="500" />
+                        <Setter Property="SaveAspectRatio" Value="True" />
+                    </Style>
+                </md:MarkdownScrollViewer.Styles>
+                <md:MarkdownScrollViewer.Plugins>
+                    <md:MdAvPlugins PathResolver="{StaticResource HttpPathResolver}" HyperlinkCommand="{StaticResource HyperlinkCommand}" />
+                </md:MarkdownScrollViewer.Plugins>
+            </md:MarkdownScrollViewer>
+            <GridSplitter Grid.Column="1" Background="{DynamicResource SemiColorTertiary}" ResizeDirection="Columns" />
+            <ScrollViewer Grid.Column="2" Margin="10">
+                <TextBlock TextWrapping="Wrap" Text="{Binding Content}" />
+            </ScrollViewer>
+        </Grid>
 
-        <Border Grid.Row="2" BorderThickness="0 2 0 0" CornerRadius="0" BorderBrush="Gray">
+        <Border Grid.Row="2" BorderThickness="0 2 0 0" CornerRadius="0" BorderBrush="{DynamicResource SemiColorTertiary}">
             <Grid>
 
                 <Grid.ColumnDefinitions>
