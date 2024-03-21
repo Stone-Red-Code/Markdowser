@@ -1,0 +1,131 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Markdowser.ViewModels"
+        xmlns:cmd="using:Markdowser.Commands"
+        xmlns:utils="using:Markdowser.Utilities"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:md="https://github.com/whistyun/Markdown.Avalonia"
+        xmlns:ctxt="clr-namespace:ColorTextBlock.Avalonia;assembly=ColorTextBlock.Avalonia"
+        xmlns:i="https://github.com/projektanker/icons.avalonia"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="Markdowser.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="{Binding Title}">
+
+    <Design.DataContext>
+        <!-- This only sets the DataContext for the previewer in an IDE,
+             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
+        <vm:MainWindowViewModel />
+    </Design.DataContext>
+
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary>
+                    <utils:HttpPathResolver x:Key="HttpPathResolver" />
+                    <cmd:HyperlinkCommand x:Key="HyperlinkCommand" />
+                    <cmd:ChangeThemeCommand x:Key="ChangeThemeCommand" />
+                    <cmd:HomeCommand x:Key="HomeCommand" />
+                </ResourceDictionary>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TabControl Grid.Row="1">
+            <TabItem Header="Markdown">
+                <md:MarkdownScrollViewer Margin="10" IsEnabled="{Binding !IsBusy}" Markdown="{Binding Content}">
+                    <md:MarkdownScrollViewer.Styles>
+                        <Style Selector="ctxt|CTextBlock">
+                            <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
+                        </Style>
+                        <Style Selector="ctxt|CTextBlock.Heading1">
+                            <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
+                        </Style>
+                        <Style Selector="ctxt|CTextBlock.Heading2">
+                            <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
+                        </Style>
+                        <Style Selector="ctxt|CTextBlock.Heading3">
+                            <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
+                        </Style>
+                        <Style Selector="ctxt|CTextBlock.Heading4">
+                            <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
+                        </Style>
+                        <Style Selector="ctxt|CTextBlock.Heading5">
+                            <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
+                        </Style>
+                        <Style Selector="ctxt|CTextBlock.Heading6">
+                            <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
+                        </Style>
+                        <Style Selector="ctxt|CHyperlink">
+                            <Setter Property="Foreground" Value="{DynamicResource SemiColorLink}" />
+                        </Style>
+                        <Style Selector="ctxt|CHyperlink:pointerover">
+                            <Setter Property="Foreground" Value="{DynamicResource SemiColorLinkPointerover}" />
+                        </Style>
+                        <Style Selector="ctxt|CHyperlink:pressed">
+                            <Setter Property="Foreground" Value="{DynamicResource SemiColorLinkVisited}" />
+                        </Style>
+                        <Style Selector="ctxt|CImage">
+                            <Setter Property="FittingWhenProtrude" Value="True" />
+                            <Setter Property="LayoutWidth" Value="500" />
+                            <Setter Property="SaveAspectRatio" Value="True" />
+                        </Style>
+                    </md:MarkdownScrollViewer.Styles>
+                    <md:MarkdownScrollViewer.Plugins>
+                        <md:MdAvPlugins PathResolver="{StaticResource HttpPathResolver}" HyperlinkCommand="{StaticResource HyperlinkCommand}" />
+                    </md:MarkdownScrollViewer.Plugins>
+                </md:MarkdownScrollViewer>
+            </TabItem>
+            <TabItem Header="Raw">
+                <ScrollViewer Margin="10">
+                    <TextBlock Text="{Binding Content}" />
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+
+        <Border Grid.Row="2" BorderThickness="0 2 0 0" CornerRadius="0" BorderBrush="Gray">
+            <Grid>
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Button Grid.Column="0" i:Attached.Icon="fa-solid fa-caret-left" IsEnabled="{Binding BackEnabled}" Command="{Binding Back}" />
+                <Button Grid.Column="1" i:Attached.Icon="fa-solid fa-caret-right" IsEnabled="{Binding ForwardEnabled}" Command="{Binding Forward}" />
+                <Button Grid.Column="2" i:Attached.Icon="fa-solid fa-house" Command="{StaticResource HomeCommand}" />
+
+                <Grid Grid.Column="3">
+                    <TextBox x:Name="urlBar" IsVisible="{Binding !IsBusy}" Watermark="Search DuckDuckGo or type a URL" Text="{Binding Url}" BorderThickness="0">
+                        <TextBox.KeyBindings>
+                            <KeyBinding Gesture="Enter" Command="{Binding Browse}" />
+                        </TextBox.KeyBindings>
+                        <TextBox.Styles>
+                            <Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
+                                <Setter Property="BorderThickness" Value="0" />
+                            </Style>
+                        </TextBox.Styles>
+                    </TextBox>
+
+                    <ProgressBar IsVisible="{Binding IsBusy}" IsIndeterminate="{Binding ProgressIndeterminate}" ShowProgressText="{Binding !ProgressIndeterminate}" Maximum="100" Height="32" Grid.Row="2" Value="{Binding Progress}" />
+                </Grid>
+
+                <Button Grid.Column="4" Command="{StaticResource ChangeThemeCommand}" i:Attached.Icon="fa-solid fa-moon" />
+                <Button Grid.Column="5" HorizontalAlignment="Right" i:Attached.Icon="fa-solid fa-cog" />
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
