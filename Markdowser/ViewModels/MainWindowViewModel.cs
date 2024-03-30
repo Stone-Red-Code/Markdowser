@@ -30,26 +30,26 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private readonly StringBuilder html = new();
     private StringBuilder? content;
-    private int currentTabIndex;
+    private TabItem currentTab = null!;
     private bool showSidePanel;
     private bool isBusy;
     private int progress;
     public ObservableCollection<TabItem> Tabs => GlobalState.Tabs;
     public string Title => $"{nameof(Markdowser)} - {Assembly.GetExecutingAssembly().GetName().Version?.ToString()}";
 
-    public int CurrentTabIndex
+    public TabItem CurrentTab
     {
-        get => currentTabIndex;
+        get => currentTab;
         set
         {
-            if (CurrentTab is not null)
+            if (currentTab is not null)
             {
-                CurrentTab.Tag = Url;
+                currentTab.Tag = Url;
             }
 
-            _ = this.RaiseAndSetIfChanged(ref currentTabIndex, value);
+            _ = this.RaiseAndSetIfChanged(ref currentTab!, value);
 
-            Url = CurrentTab?.Tag?.ToString() ?? string.Empty;
+            Url = currentTab?.Tag?.ToString() ?? string.Empty;
 
             FetchUrl();
         }
@@ -128,9 +128,12 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public ICommand CloseTab => ReactiveCommand.Create(() =>
     {
-        if (Tabs.Count > 1 && Tabs.Remove(CurrentTab))
+        if (Tabs.Count > 1)
         {
-            CurrentTabIndex = Math.Max(0, CurrentTabIndex - 1);
+            int currentIndex = Tabs.IndexOf(CurrentTab);
+            _ = Tabs.Remove(CurrentTab);
+
+            CurrentTab = currentIndex > 0 ? Tabs[currentIndex - 1] : Tabs[0];
             this.RaisePropertyChanged(nameof(CloseTabEnabled));
         }
     });
@@ -139,11 +142,9 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         TabItem tab = new() { Header = "New Tab", Name = Guid.NewGuid().ToString() };
         Tabs.Add(tab);
-        CurrentTabIndex = Tabs.Count - 1;
+        CurrentTab = tab;
         this.RaisePropertyChanged(nameof(CloseTabEnabled));
     });
-
-    private TabItem CurrentTab => Tabs[CurrentTabIndex];
 
     private StringBuilder DefaultContent => new StringBuilder()
         .AppendLine($"![Logo](avares://Markdowser/Assets/Markdowser-{(Settings.Current.DarkMode ? "Dark" : "Light")}-Transparent.png)")

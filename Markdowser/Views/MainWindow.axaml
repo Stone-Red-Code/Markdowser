@@ -35,7 +35,7 @@
 
     <Grid RowDefinitions="Auto, *, Auto">
         <Grid Grid.Row="0" ColumnDefinitions="*, Auto, Auto">
-            <TabControl Grid.Column="0" Theme="{DynamicResource ScrollTabControl}" SelectedIndex="{Binding CurrentTabIndex, Mode=TwoWay}" ItemsSource="{Binding Tabs}" />
+            <TabControl Grid.Column="0" Theme="{DynamicResource ScrollTabControl}" SelectedItem="{Binding CurrentTab, Mode=TwoWay}" ItemsSource="{Binding Tabs}" />
             <Button Grid.Column="1" Command="{Binding CloseTab}" IsEnabled="{Binding CloseTabEnabled}" HorizontalAlignment="Right" VerticalAlignment="Top" Height="32" i:Attached.Icon="fa-solid fa-xmark" />
             <Button Grid.Column="2" Command="{Binding NewTab}" HorizontalAlignment="Right" VerticalAlignment="Top" Height="32" i:Attached.Icon="fa-solid fa-plus" />
         </Grid>
