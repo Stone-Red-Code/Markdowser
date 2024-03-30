@@ -1,9 +1,11 @@
-﻿using System.IO;
+﻿using Markdowser.Utilities;
+
+using System.IO;
 using System.Text.Json;
 
-namespace Markdowser.Utilities;
+namespace Markdowser.Models;
 
-internal class Settings
+public class Settings
 {
     public static Settings Current { get; set; } = LoadSettings();
 

@@ -3,7 +3,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Styling;
 
-using Markdowser.Utilities;
+using Markdowser.Models;
 using Markdowser.ViewModels;
 using Markdowser.Views;
 

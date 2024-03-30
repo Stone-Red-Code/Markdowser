@@ -1,7 +1,7 @@
 ﻿using Avalonia.Platform;
 
 using Markdown.Avalonia.Utils;
-
+using Markdowser.Models;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;

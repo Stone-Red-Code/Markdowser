@@ -13,8 +13,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Assets\Markdowser-Dark-Transparent.ico" />
     <None Remove="Assets\Markdowser-Dark-Transparent.png" />
     <None Remove="Assets\Markdowser-Dark.png" />
+    <None Remove="Assets\Markdowser-Light-Transparent.ico" />
     <None Remove="Assets\Markdowser-Light-Transparent.png" />
     <None Remove="Assets\Markdowser-Light.png" />
   </ItemGroup>
@@ -34,9 +36,5 @@
     <PackageReference Include="Projektanker.Icons.Avalonia.MaterialDesign" Version="9.1.2" />
     <PackageReference Include="ReverseMarkdown" Version="4.3.0" />
     <PackageReference Include="Semi.Avalonia" Version="11.0.7.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Models\" />
   </ItemGroup>
 </Project>

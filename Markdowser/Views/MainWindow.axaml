@@ -11,7 +11,7 @@
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="Markdowser.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Icon="/Assets/avalonia-logo.ico"
+        Icon="/Assets/Markdowser-Light-Transparent.ico"
         Title="{Binding Title}">
 
     <Design.DataContext>
@@ -33,15 +33,21 @@
         </ResourceDictionary>
     </Window.Resources>
 
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
+    <Grid RowDefinitions="Auto, *, Auto">
+        <Grid Grid.Row="0" ColumnDefinitions="*, Auto, Auto">
+            <TabControl Grid.Column="0" Theme="{DynamicResource ScrollTabControl}" SelectedIndex="{Binding CurrentTabIndex, Mode=TwoWay}" ItemsSource="{Binding Tabs}" />
+            <Button Grid.Column="1" Command="{Binding CloseTab}" IsEnabled="{Binding CloseTabEnabled}" HorizontalAlignment="Right" VerticalAlignment="Top" Height="32" i:Attached.Icon="fa-solid fa-xmark" />
+            <Button Grid.Column="2" Command="{Binding NewTab}" HorizontalAlignment="Right" VerticalAlignment="Top" Height="32" i:Attached.Icon="fa-solid fa-plus" />
+        </Grid>
 
-        <Grid ColumnDefinitions="*, 4, *" Grid.Row="1">
-            <md:MarkdownScrollViewer Margin="10" IsEnabled="{Binding !IsBusy}" Markdown="{Binding Content}">
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" utils:ColumnDefinition.IsVisible="{Binding ShowSidePanel}" />
+            </Grid.ColumnDefinitions>
+
+            <md:MarkdownScrollViewer Margin="10 0 10 10" IsEnabled="{Binding !IsBusy}" Markdown="{Binding Content}">
                 <md:MarkdownScrollViewer.Styles>
                     <Style Selector="ctxt|CTextBlock">
                         <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
@@ -83,29 +89,34 @@
                     <md:MdAvPlugins PathResolver="{StaticResource HttpPathResolver}" HyperlinkCommand="{StaticResource HyperlinkCommand}" />
                 </md:MarkdownScrollViewer.Plugins>
             </md:MarkdownScrollViewer>
-            <GridSplitter Grid.Column="1" Background="{DynamicResource SemiColorTertiary}" ResizeDirection="Columns" />
-            <ScrollViewer Grid.Column="2" Margin="10">
-                <TextBlock TextWrapping="Wrap" Text="{Binding Content}" />
-            </ScrollViewer>
+            <GridSplitter Grid.Column="1" IsVisible="{Binding ShowSidePanel}" Background="{DynamicResource SemiColorTertiary}" ResizeDirection="Columns" />
+            <TabControl  Grid.Column="2" IsVisible="{Binding ShowSidePanel}" Margin="10">
+                <TabItem Header="Settings">
+                    <ScrollViewer>
+                        <ContentControl Margin="0 10 0 0" Content="{Binding SettingsViewModel}" />
+                    </ScrollViewer>
+                </TabItem>
+                <TabItem Header="Markdown">
+                    <ScrollViewer>
+                        <ContentControl Margin="0 10 0 0" Content="{Binding RawMarkdownViewModel}" />
+                    </ScrollViewer>
+                </TabItem>
+                <TabItem Header="HTML">
+                    <ScrollViewer>
+                        <ContentControl Margin="0 10 0 0" Content="{Binding RawHtmlViewModel}" />
+                    </ScrollViewer>
+                </TabItem>
+            </TabControl>
         </Grid>
 
         <Border Grid.Row="2" BorderThickness="0 2 0 0" CornerRadius="0" BorderBrush="{DynamicResource SemiColorTertiary}">
-            <Grid>
-
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-
+            <Grid ColumnDefinitions="Auto, Auto, Auto, Auto, *, Auto">
                 <Button Grid.Column="0" i:Attached.Icon="fa-solid fa-caret-left" IsEnabled="{Binding BackEnabled}" Command="{Binding Back}" />
                 <Button Grid.Column="1" i:Attached.Icon="fa-solid fa-caret-right" IsEnabled="{Binding ForwardEnabled}" Command="{Binding Forward}" />
-                <Button Grid.Column="2" i:Attached.Icon="fa-solid fa-house" Command="{StaticResource HomeCommand}" />
+                <Button Grid.Column="2" i:Attached.Icon="fa-solid fa-rotate-right" Command="{Binding Browse}" />
+                <Button Grid.Column="3" i:Attached.Icon="fa-solid fa-house" Command="{StaticResource HomeCommand}" />
 
-                <Grid Grid.Column="3">
+                <Grid Grid.Column="4">
                     <TextBox x:Name="urlBar" IsVisible="{Binding !IsBusy}" Watermark="Search DuckDuckGo or type a URL" Text="{Binding Url}" BorderThickness="0">
                         <TextBox.KeyBindings>
                             <KeyBinding Gesture="Enter" Command="{Binding Browse}" />
@@ -120,8 +131,7 @@
                     <ProgressBar IsVisible="{Binding IsBusy}" IsIndeterminate="{Binding ProgressIndeterminate}" ShowProgressText="{Binding !ProgressIndeterminate}" Maximum="100" Height="32" Grid.Row="2" Value="{Binding Progress}" />
                 </Grid>
 
-                <Button Grid.Column="4" Command="{StaticResource ChangeThemeCommand}" i:Attached.Icon="fa-solid fa-moon" />
-                <Button Grid.Column="5" HorizontalAlignment="Right" i:Attached.Icon="fa-solid fa-cog" />
+                <Button Grid.Column="5" Command="{Binding ToggleSidePanel}" HorizontalAlignment="Right" i:Attached.Icon="fa-solid fa-table-columns" />
             </Grid>
         </Border>
     </Grid>

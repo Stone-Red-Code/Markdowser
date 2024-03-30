@@ -1,6 +1,7 @@
 ﻿using Avalonia;
 using Avalonia.Styling;
 
+using Markdowser.Models;
 using Markdowser.Utilities;
 
 using System;
@@ -10,7 +11,11 @@ namespace Markdowser.Commands;
 
 internal class ChangeThemeCommand : ICommand
 {
+#pragma warning disable CS0067 // The event 'ChangeThemeCommand.CanExecuteChanged' is never used
+
     public event EventHandler? CanExecuteChanged;
+
+#pragma warning restore CS0067 // The event 'ChangeThemeCommand.CanExecuteChanged' is never used
 
     public bool CanExecute(object? parameter)
     {

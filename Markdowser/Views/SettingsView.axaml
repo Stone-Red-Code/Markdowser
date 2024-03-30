@@ -1,0 +1,29 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:vm="using:Markdowser.ViewModels"
+             xmlns:cmd="using:Markdowser.Commands"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:i="https://github.com/projektanker/icons.avalonia"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:DataType="vm:SettingsViewModel"
+             x:Class="Markdowser.Views.SettingsView">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary>
+                    <cmd:ChangeThemeCommand x:Key="ChangeThemeCommand" />
+                </ResourceDictionary>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <StackPanel Spacing="10">
+        <TextBlock Text="Dark Mode" />
+        <ToggleSwitch IsChecked="{Binding DarkMode}" Command="{StaticResource ChangeThemeCommand}" />
+
+        <TextBlock Text="Home URL" />
+        <TextBox Text="{Binding HomeUrl}" Watermark="URL, or leave empty to use default" />
+    </StackPanel>
+</UserControl>

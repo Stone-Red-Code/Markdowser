@@ -1,5 +1,8 @@
-﻿using System;
+﻿using Avalonia.Controls;
+
+using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Markdowser.Utilities;
@@ -32,6 +35,8 @@ internal static class GlobalState
             UrlChanged?.Invoke(null, url);
         }
     }
+
+    public static ObservableCollection<TabItem> Tabs { get; internal set; } = [new TabItem() { Header = "New Tab" }];
 
     internal static void SetUrl(object sender, string url)
     {

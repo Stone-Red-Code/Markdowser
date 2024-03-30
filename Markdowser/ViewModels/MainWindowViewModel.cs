@@ -1,8 +1,15 @@
-﻿using Markdowser.Utilities;
+﻿using Avalonia.Controls;
+using Avalonia.Threading;
+
+using HtmlAgilityPack;
+
+using Markdowser.Models;
+using Markdowser.Utilities;
 
 using ReactiveUI;
 
 using System;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -21,12 +28,32 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly HttpClient httpClient = new(new HttpClientHandler() { AllowAutoRedirect = true });
     private readonly ReverseMarkdown.Converter markdownConverter = new();
 
+    private readonly StringBuilder html = new();
     private StringBuilder? content;
-
+    private int currentTabIndex;
+    private bool showSidePanel;
     private bool isBusy;
-
     private int progress;
+    public ObservableCollection<TabItem> Tabs => GlobalState.Tabs;
     public string Title => $"{nameof(Markdowser)} - {Assembly.GetExecutingAssembly().GetName().Version?.ToString()}";
+
+    public int CurrentTabIndex
+    {
+        get => currentTabIndex;
+        set
+        {
+            if (CurrentTab is not null)
+            {
+                CurrentTab.Tag = Url;
+            }
+
+            _ = this.RaiseAndSetIfChanged(ref currentTabIndex, value);
+
+            Url = CurrentTab?.Tag?.ToString() ?? string.Empty;
+
+            FetchUrl();
+        }
+    }
 
     public StringBuilder Content
     {
@@ -38,6 +65,12 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         get => GlobalState.Url;
         set => GlobalState.SetUrl(this, value);
+    }
+
+    public bool ShowSidePanel
+    {
+        get => showSidePanel;
+        set => this.RaiseAndSetIfChanged(ref showSidePanel, value);
     }
 
     public bool IsBusy
@@ -56,12 +89,13 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
+    public SettingsViewModel SettingsViewModel => new SettingsViewModel();
+    public RawHtmlViewModel RawHtmlViewModel => new RawHtmlViewModel(html);
+    public RawMarkdownViewModel RawMarkdownViewModel => new RawMarkdownViewModel(() => Content);
+    public bool CloseTabEnabled => Tabs.Count > 1;
     public bool BackEnabled => GlobalState.BackHistory.Count > 0;
-
     public bool ForwardEnabled => GlobalState.ForwardHistory.Count > 0;
-
     public bool ProgressIndeterminate => Progress == 0;
-
     public ICommand Browse => ReactiveCommand.Create(FetchUrl);
 
     public ICommand Back => ReactiveCommand.Create(() =>
@@ -89,6 +123,27 @@ public partial class MainWindowViewModel : ViewModelBase
             this.RaisePropertyChanged(nameof(BackEnabled));
         }
     });
+
+    public ICommand ToggleSidePanel => ReactiveCommand.Create(() => ShowSidePanel = !ShowSidePanel);
+
+    public ICommand CloseTab => ReactiveCommand.Create(() =>
+    {
+        if (Tabs.Count > 1 && Tabs.Remove(CurrentTab))
+        {
+            CurrentTabIndex = Math.Max(0, CurrentTabIndex - 1);
+            this.RaisePropertyChanged(nameof(CloseTabEnabled));
+        }
+    });
+
+    public ICommand NewTab => ReactiveCommand.Create(() =>
+    {
+        TabItem tab = new() { Header = "New Tab", Name = Guid.NewGuid().ToString() };
+        Tabs.Add(tab);
+        CurrentTabIndex = Tabs.Count - 1;
+        this.RaisePropertyChanged(nameof(CloseTabEnabled));
+    });
+
+    private TabItem CurrentTab => Tabs[CurrentTabIndex];
 
     private StringBuilder DefaultContent => new StringBuilder()
         .AppendLine($"![Logo](avares://Markdowser/Assets/Markdowser-{(Settings.Current.DarkMode ? "Dark" : "Light")}-Transparent.png)")
@@ -139,8 +194,10 @@ public partial class MainWindowViewModel : ViewModelBase
         if (string.IsNullOrWhiteSpace(Url))
         {
             content = null;
-            this.RaisePropertyChanged(nameof(Content));
+            _ = html.Clear();
+            ContentChanged();
             Debug.WriteLine("URL is empty.");
+            CurrentTab.Header = "New Tab";
             return;
         }
 
@@ -152,6 +209,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         content ??= new StringBuilder();
         _ = content.Clear();
+        _ = html.Clear();
 
         IsBusy = true;
         Progress = 0;
@@ -159,8 +217,6 @@ public partial class MainWindowViewModel : ViewModelBase
         _ = Task.Run(async () =>
         {
             Debug.WriteLine("Fetching URL...");
-
-            StringBuilder html = new();
 
             try
             {
@@ -173,7 +229,7 @@ public partial class MainWindowViewModel : ViewModelBase
                     IsBusy = false;
                     _ = content.AppendLine($"# {(int)httpResponseMessage.StatusCode} {httpResponseMessage.StatusCode}");
                     _ = content.AppendLine($"Failed to fetch URL: {httpResponseMessage.ReasonPhrase}");
-                    this.RaisePropertyChanged(nameof(Content));
+                    ContentChanged();
                     return;
                 }
 
@@ -187,6 +243,15 @@ public partial class MainWindowViewModel : ViewModelBase
                     _ = html.AppendLine(await streamReader.ReadLineAsync());
                     Progress = (int)((double)contentStream.Position / length * 100);
                 }
+
+                HtmlDocument htmlDoc = new HtmlDocument();
+                htmlDoc.LoadHtml(html.ToString());
+                string title = htmlDoc.DocumentNode.SelectSingleNode("html/head/title")?.InnerText ?? Url;
+
+                Dispatcher.UIThread.Post(() =>
+                {
+                    CurrentTab.Header = title?.Trim() ?? Url;
+                });
             }
             catch (HttpRequestException e)
             {
@@ -199,15 +264,17 @@ public partial class MainWindowViewModel : ViewModelBase
 
                 _ = content.AppendLine($"# {e.HttpRequestError}");
                 _ = content.AppendLine($"Failed to fetch URL: {e.Message}");
-                this.RaisePropertyChanged(nameof(Content));
+                ContentChanged();
             }
             catch (Exception e)
             {
                 IsBusy = false;
                 _ = content.AppendLine($"# {e.GetType().Name}");
                 _ = content.AppendLine($"Failed to fetch URL: {e.Message}");
-                this.RaisePropertyChanged(nameof(Content));
+                ContentChanged();
             }
+
+            Progress = 0;
 
             Debug.WriteLine("Converting HTML to markdown...");
 
@@ -240,14 +307,18 @@ public partial class MainWindowViewModel : ViewModelBase
                 }
 
                 _ = content.AppendLine(trimmedLine);
-
-                //this.RaisePropertyChanged(nameof(Content));
             }
 
-            Debug.WriteLine("Done processing.");
-            this.RaisePropertyChanged(nameof(Content));
+            ContentChanged();
 
             IsBusy = false;
         });
+    }
+
+    private void ContentChanged()
+    {
+        this.RaisePropertyChanged(nameof(Content));
+        this.RaisePropertyChanged(nameof(RawHtmlViewModel));
+        this.RaisePropertyChanged(nameof(RawMarkdownViewModel));
     }
 }

@@ -8,7 +8,11 @@ namespace Markdowser.Commands;
 
 public class HyperlinkCommand : ICommand
 {
+#pragma warning disable CS0067 // The event 'HyperlinkCommand.CanExecuteChanged' is never used
+
     public event EventHandler? CanExecuteChanged;
+
+#pragma warning restore CS0067 // The event 'HyperlinkCommand.CanExecuteChanged' is never used
 
     public bool CanExecute(object? parameter)
     {
