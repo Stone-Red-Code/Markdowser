@@ -1,6 +1,11 @@
 # Markdowser
 > A web browser that renders markdown instead of HTML
 
+## What is it?
+
+Markdowser is a web browser that renders Markdown instead of HTML.\
+It uses the [ReverseMarkdown](https://github.com/mysticmind/reversemarkdown-net) library to convert HTML websites to Markdown. This gets rid of all the clutter and is supposed to make the content more readable and consistent across different websites.
+
 ## Setup
 
 1. Download one of the [releases](https://github.com/Stone-Red-Code/Markdowser/releases).
@@ -11,7 +16,6 @@
 ## Follow the development
 
 [![Twitter(X)](http://img.shields.io/badge/Twitter-black.svg?&logo=x&style=for-the-badge&logoColor=white)](https://twitter.com/search?q=%23Markdowser%20%40StoneRedCode&f=live)
-
 
 ## Preview
 
