@@ -37,4 +37,9 @@
     <PackageReference Include="ReverseMarkdown" Version="4.3.0" />
     <PackageReference Include="Semi.Avalonia" Version="11.0.7.1" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Processing\Processors\" />
+    <Folder Include="Views\Content\" />
+  </ItemGroup>
 </Project>

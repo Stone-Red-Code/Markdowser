@@ -11,7 +11,7 @@
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="Markdowser.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Icon="/Assets/Markdowser-Light-Transparent.ico"
+        Icon="{Binding Icon}"
         Title="{Binding Title}">
 
     <Design.DataContext>

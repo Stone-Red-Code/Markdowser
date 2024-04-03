@@ -35,7 +35,6 @@ public partial class MainWindowViewModel : ViewModelBase
     private bool isBusy;
     private int progress;
     public ObservableCollection<TabItem> Tabs => GlobalState.Tabs;
-    public string Title => $"{nameof(Markdowser)} - {Assembly.GetExecutingAssembly().GetName().Version?.ToString()}";
 
     public TabItem CurrentTab
     {
@@ -178,6 +177,8 @@ public partial class MainWindowViewModel : ViewModelBase
 
         GlobalState.ContentReload += (sender, _) =>
         {
+            // Updatre icon when dark mode changes
+            this.RaisePropertyChanged(nameof(Icon));
             this.RaisePropertyChanged(nameof(Content));
         };
     }
