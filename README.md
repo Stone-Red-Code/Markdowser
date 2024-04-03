@@ -26,5 +26,5 @@ It uses the [ReverseMarkdown](https://github.com/mysticmind/reversemarkdown-net)
 
 - [Avalonia](https://github.com/AvaloniaUI/Avalonia) - [MIT](https://github.com/AvaloniaUI/Avalonia/blob/master/licence.md)
 - [Icons.Avalonia](https://github.com/Projektanker/Icons.Avalonia) - [MIT](https://github.com/Projektanker/Icons.Avalonia/blob/main/LICENSE)
-- [Semi.Avalonia](https://github.com/irihitech/Semi.Avalonia) -[MIT](https://github.com/irihitech/Semi.Avalonia/blob/main/LICENSE)
-- [ReverseMarkdown](https://github.com/mysticmind/reversemarkdown-net) -[MIT](https://github.com/mysticmind/reversemarkdown-net/blob/master/LICENSE)
+- [Semi.Avalonia](https://github.com/irihitech/Semi.Avalonia) - [MIT](https://github.com/irihitech/Semi.Avalonia/blob/main/LICENSE)
+- [ReverseMarkdown](https://github.com/mysticmind/reversemarkdown-net) - [MIT](https://github.com/mysticmind/reversemarkdown-net/blob/master/LICENSE)
