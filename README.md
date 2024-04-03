@@ -1,5 +1,5 @@
 # Markdowser
-> A markdown web browser.
+> A web browser that renders markdown instead of HTML
 
 ## Setup
 
