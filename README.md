@@ -12,7 +12,11 @@
 
 [![Twitter(X)](http://img.shields.io/badge/Twitter-black.svg?&logo=x&style=for-the-badge&logoColor=white)](https://twitter.com/search?q=%23Markdowser%20%40StoneRedCode&f=live)
 
+
 ## Preview
+
+![Screenshot 2024-04-03 173609](https://github.com/Stone-Red-Code/Markdowser/assets/56473591/e7a1b9f2-a416-448b-9e54-a91e5794ffb3)
+![Screenshot 2024-04-03 172715](https://github.com/Stone-Red-Code/Markdowser/assets/56473591/e96c2f48-b5fc-4f76-b7d1-10aa07f3cfeb)
 
 ## Third party licenses
 
