@@ -188,6 +188,12 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private void FetchUrl()
     {
+        if (IsBusy)
+        {
+            WindowNotificationManager.Show(new Notification("Busy", "The browser is currently busy.", NotificationType.Warning));
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(Url))
         {
             Content = DefaultContent;
