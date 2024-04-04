@@ -19,8 +19,11 @@ It uses the [ReverseMarkdown](https://github.com/mysticmind/reversemarkdown-net)
 
 ## Preview
 
-![Screenshot 2024-04-03 173609](https://github.com/Stone-Red-Code/Markdowser/assets/56473591/e7a1b9f2-a416-448b-9e54-a91e5794ffb3)
-![Screenshot 2024-04-03 172715](https://github.com/Stone-Red-Code/Markdowser/assets/56473591/e96c2f48-b5fc-4f76-b7d1-10aa07f3cfeb)
+![Markdowser](https://github.com/Stone-Red-Code/Markdowser/assets/56473591/c57414b7-05e2-45af-868a-e0df61d885c4)
+![Markdowser](https://github.com/Stone-Red-Code/Markdowser/assets/56473591/eae99633-5d4e-4e8e-9904-708ad7fd2bb8)
+
+
+
 
 ## Third party licenses
 
