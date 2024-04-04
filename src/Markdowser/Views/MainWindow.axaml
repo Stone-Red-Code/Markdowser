@@ -11,7 +11,7 @@
         x:DataType="vm:MainWindowViewModel"
         Icon="{Binding Icon}"
         Title="{Binding Title}"
-        Loaded="Window_Loaded">
+        Loaded="Window_Loaded" WindowState="{Binding WindowState}">
 
     <Design.DataContext>
         <!-- This only sets the DataContext for the previewer in an IDE,
@@ -32,6 +32,7 @@
 
     <Window.KeyBindings>
         <KeyBinding Gesture="Ctrl+R" Command="{Binding Browse}" />
+        <KeyBinding Gesture="F5" Command="{Binding Browse}" />
         <KeyBinding Gesture="Alt+Home" Command="{StaticResource HomeCommand}" />
         <KeyBinding Gesture="Alt+H" Command="{StaticResource HomeCommand}" />
         <KeyBinding Gesture="Alt+Left" Command="{Binding Back}" />
@@ -39,6 +40,7 @@
         <KeyBinding Gesture="Ctrl+T" Command="{Binding NewTab}" />
         <KeyBinding Gesture="Ctrl+W" Command="{Binding CloseTab}" />
         <KeyBinding Gesture="Alt+S" Command="{Binding ToggleSidePanel}" />
+        <KeyBinding Gesture="F11" Command="{Binding ToggleFullScreen}" />
     </Window.KeyBindings>
 
     <Grid RowDefinitions="Auto, *, Auto">

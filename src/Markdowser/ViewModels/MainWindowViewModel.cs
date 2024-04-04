@@ -29,6 +29,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private ContentViewModelBase content;
     private TabItem currentTab = null!;
+    private WindowState windowState;
     private bool showSidePanel;
     private bool isBusy;
     private int progress;
@@ -50,6 +51,12 @@ public partial class MainWindowViewModel : ViewModelBase
 
             FetchUrl();
         }
+    }
+
+    public WindowState WindowState
+    {
+        get => windowState;
+        set => this.RaiseAndSetIfChanged(ref windowState, value);
     }
 
     public ContentViewModelBase Content
@@ -142,6 +149,8 @@ public partial class MainWindowViewModel : ViewModelBase
         CurrentTab = tab;
         this.RaisePropertyChanged(nameof(CloseTabEnabled));
     });
+
+    public ICommand ToggleFullScreen => ReactiveCommand.Create(() => WindowState = WindowState == WindowState.FullScreen ? WindowState.Normal : WindowState.FullScreen);
 
     private MarkdownContentViewModel DefaultContent => new("New Tab", new StringBuilder()
         .AppendLine($"![Logo](avares://Markdowser/Assets/Markdowser-{(Settings.Current.DarkMode ? "Dark" : "Light")}-Transparent.png)")
