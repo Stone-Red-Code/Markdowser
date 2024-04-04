@@ -1,0 +1,71 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Markdowser.ViewModels"
+             xmlns:cmd="using:Markdowser.Commands"
+             xmlns:utils="using:Markdowser.Utilities"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             xmlns:md="https://github.com/whistyun/Markdown.Avalonia"
+             xmlns:ctxt="clr-namespace:ColorTextBlock.Avalonia;assembly=ColorTextBlock.Avalonia"
+             x:DataType="vm:Content.MarkdownContentViewModel"
+             x:Class="Markdowser.Views.Content.MarkdownContentView">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary>
+                    <utils:HttpPathResolver x:Key="HttpPathResolver" />
+                    <cmd:HyperlinkCommand x:Key="HyperlinkCommand" />
+                    <cmd:ChangeThemeCommand x:Key="ChangeThemeCommand" />
+                    <cmd:HomeCommand x:Key="HomeCommand" />
+                </ResourceDictionary>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <md:MarkdownScrollViewer Margin="10 0 10 10" Markdown="{Binding Markdown}">
+            <md:MarkdownScrollViewer.Styles>
+                <Style Selector="ctxt|CTextBlock">
+                    <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
+                </Style>
+                <Style Selector="ctxt|CTextBlock.Heading1">
+                    <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
+                </Style>
+                <Style Selector="ctxt|CTextBlock.Heading2">
+                    <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
+                </Style>
+                <Style Selector="ctxt|CTextBlock.Heading3">
+                    <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
+                </Style>
+                <Style Selector="ctxt|CTextBlock.Heading4">
+                    <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
+                </Style>
+                <Style Selector="ctxt|CTextBlock.Heading5">
+                    <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
+                </Style>
+                <Style Selector="ctxt|CTextBlock.Heading6">
+                    <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
+                </Style>
+                <Style Selector="ctxt|CHyperlink">
+                    <Setter Property="Foreground" Value="{DynamicResource SemiColorLink}" />
+                </Style>
+                <Style Selector="ctxt|CHyperlink:pointerover">
+                    <Setter Property="Foreground" Value="{DynamicResource SemiColorLinkPointerover}" />
+                </Style>
+                <Style Selector="ctxt|CHyperlink:pressed">
+                    <Setter Property="Foreground" Value="{DynamicResource SemiColorLinkVisited}" />
+                </Style>
+                <Style Selector="ctxt|CImage">
+                    <Setter Property="FittingWhenProtrude" Value="True" />
+                    <Setter Property="LayoutWidth" Value="500" />
+                    <Setter Property="SaveAspectRatio" Value="True" />
+                </Style>
+            </md:MarkdownScrollViewer.Styles>
+            <md:MarkdownScrollViewer.Plugins>
+                <md:MdAvPlugins PathResolver="{StaticResource HttpPathResolver}" HyperlinkCommand="{StaticResource HyperlinkCommand}" />
+            </md:MarkdownScrollViewer.Plugins>
+        </md:MarkdownScrollViewer>
+    </Grid>
+</UserControl>

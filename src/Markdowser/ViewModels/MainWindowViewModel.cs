@@ -1,10 +1,12 @@
 ﻿using Avalonia.Controls;
+using Avalonia.Controls.Notifications;
 using Avalonia.Threading;
 
-using HtmlAgilityPack;
-
 using Markdowser.Models;
+using Markdowser.Processing;
+using Markdowser.Processing.Processors;
 using Markdowser.Utilities;
+using Markdowser.ViewModels.Content;
 
 using ReactiveUI;
 
@@ -12,12 +14,9 @@ using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Reflection;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
@@ -26,10 +25,9 @@ namespace Markdowser.ViewModels;
 public partial class MainWindowViewModel : ViewModelBase
 {
     private readonly HttpClient httpClient = new(new HttpClientHandler() { AllowAutoRedirect = true });
-    private readonly ReverseMarkdown.Converter markdownConverter = new();
+    private readonly ContentProcessorManager contentProcessorManager = new();
 
-    private readonly StringBuilder html = new();
-    private StringBuilder? content;
+    private ContentViewModelBase content;
     private TabItem currentTab = null!;
     private bool showSidePanel;
     private bool isBusy;
@@ -54,9 +52,9 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
-    public StringBuilder Content
+    public ContentViewModelBase Content
     {
-        get => content ?? DefaultContent;
+        get => content;
         set => this.RaiseAndSetIfChanged(ref content, value);
     }
 
@@ -89,8 +87,8 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
     public SettingsViewModel SettingsViewModel => new SettingsViewModel();
-    public RawHtmlViewModel RawHtmlViewModel => new RawHtmlViewModel(html);
-    public RawMarkdownViewModel RawMarkdownViewModel => new RawMarkdownViewModel(() => Content);
+    public RawHtmlViewModel RawHtmlViewModel => new RawHtmlViewModel(new());
+    public RawMarkdownViewModel RawMarkdownViewModel => new RawMarkdownViewModel(() => new());
     public bool CloseTabEnabled => Tabs.Count > 1;
     public bool BackEnabled => GlobalState.BackHistory.Count > 0;
     public bool ForwardEnabled => GlobalState.ForwardHistory.Count > 0;
@@ -145,21 +143,21 @@ public partial class MainWindowViewModel : ViewModelBase
         this.RaisePropertyChanged(nameof(CloseTabEnabled));
     });
 
-    private StringBuilder DefaultContent => new StringBuilder()
+    private MarkdownContentViewModel DefaultContent => new("New Tab", new StringBuilder()
         .AppendLine($"![Logo](avares://Markdowser/Assets/Markdowser-{(Settings.Current.DarkMode ? "Dark" : "Light")}-Transparent.png)")
         .AppendLine()
         .AppendLine($"{nameof(Markdowser)} {Assembly.GetExecutingAssembly().GetName().Version?.ToString()}\n")
         .AppendLine("A markdown web browser.\n")
-        .AppendLine("[GitHub](https://github.me.stone-red.net/Markdowser)");
+        .AppendLine("[GitHub](https://github.me.stone-red.net/Markdowser)").ToString());
 
     public MainWindowViewModel()
     {
         httpClient.DefaultRequestHeaders.UserAgent.ParseAdd($"{nameof(Markdowser)}/{Assembly.GetExecutingAssembly().GetName().Version?.ToString()}");
         httpClient.Timeout = TimeSpan.FromSeconds(10);
 
-        markdownConverter.Config.UnknownTags = ReverseMarkdown.Config.UnknownTagsOption.Bypass;
-        markdownConverter.Config.SuppressDivNewlines = false;
-        markdownConverter.Config.SmartHrefHandling = false;
+        content = DefaultContent;
+
+        contentProcessorManager.RegisterProcessor(new HtmlProcessor());
 
         GlobalState.UrlChanged += (sender, url) =>
         {
@@ -188,16 +186,11 @@ public partial class MainWindowViewModel : ViewModelBase
         return Uri.TryCreate(uriString, UriKind.Absolute, out uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
     }
 
-    [GeneratedRegex("!\\[(.*?)\\]\\((.*?)\\)")]
-    private static partial Regex MarkdownImage();
-
     private void FetchUrl()
     {
         if (string.IsNullOrWhiteSpace(Url))
         {
-            content = null;
-            _ = html.Clear();
-            ContentChanged();
+            Content = DefaultContent;
             Debug.WriteLine("URL is empty.");
             CurrentTab.Header = "New Tab";
             return;
@@ -205,13 +198,16 @@ public partial class MainWindowViewModel : ViewModelBase
 
         if (!IsValidHttpUri(Url, out _))
         {
-            // Search with duckduckgo
-            Url = $"https://duckduckgo.com/html/?kd=-1&k1=-1&q={Uri.EscapeDataString(Url)}";
+            if (Url.StartsWith("//"))
+            {
+                Url = $"https:{Url}";
+            }
+            else
+            {
+                // Search with duckduckgo
+                Url = $"https://duckduckgo.com/html/?kd=-1&k1=-1&q={Uri.EscapeDataString(Url)}";
+            }
         }
-
-        content ??= new StringBuilder();
-        _ = content.Clear();
-        _ = html.Clear();
 
         IsBusy = true;
         Progress = 0;
@@ -224,103 +220,65 @@ public partial class MainWindowViewModel : ViewModelBase
             {
                 HttpResponseMessage httpResponseMessage = await httpClient.GetAsync(Url);
 
-                Url = httpResponseMessage.RequestMessage?.RequestUri?.ToString() ?? Url;
+                string? newUrl = httpResponseMessage.RequestMessage?.RequestUri?.ToString();
+
+                if (newUrl is not null && newUrl != Url)
+                {
+                    string oldUrl = Url;
+                    Dispatcher.UIThread.Post(() => WindowNotificationManager.Show(new Notification("Redirected", $"Redirected from\n{oldUrl}\nto\n{newUrl}", NotificationType.Warning)));
+                    Url = newUrl;
+                }
 
                 if (!httpResponseMessage.IsSuccessStatusCode)
                 {
                     IsBusy = false;
-                    _ = content.AppendLine($"# {(int)httpResponseMessage.StatusCode} {httpResponseMessage.StatusCode}");
-                    _ = content.AppendLine($"Failed to fetch URL: {httpResponseMessage.ReasonPhrase}");
-                    ContentChanged();
+
+                    StringBuilder errorMessage = new();
+
+                    _ = errorMessage.AppendLine($"# {(int)httpResponseMessage.StatusCode} {httpResponseMessage.StatusCode}");
+                    _ = errorMessage.AppendLine($"Failed to fetch URL: {httpResponseMessage.ReasonPhrase}");
+
+                    Content = new MarkdownContentViewModel("Error", errorMessage.ToString());
                     return;
                 }
 
-                long length = httpResponseMessage.Content.Headers.ContentLength ?? 0;
+                Content = await contentProcessorManager.ProcessContent(httpResponseMessage, new Progress<ProcessingProgress>(p => Progress = p.Percentage));
 
-                using Stream contentStream = await httpResponseMessage.Content.ReadAsStreamAsync();
-                using StreamReader streamReader = new(contentStream);
-
-                while (!streamReader.EndOfStream)
-                {
-                    _ = html.AppendLine(await streamReader.ReadLineAsync());
-                    Progress = (int)((double)contentStream.Position / length * 100);
-                }
-
-                HtmlDocument htmlDoc = new HtmlDocument();
-                htmlDoc.LoadHtml(html.ToString());
-                string title = htmlDoc.DocumentNode.SelectSingleNode("html/head/title")?.InnerText ?? Url;
-
-                Dispatcher.UIThread.Post(() =>
-                {
-                    CurrentTab.Header = title?.Trim() ?? Url;
-                });
+                Dispatcher.UIThread.Post(() => CurrentTab.Header = Content.Title);
             }
             catch (HttpRequestException e)
             {
-                IsBusy = false;
+                StringBuilder errorMessage = new();
 
                 if (e.StatusCode is not null)
                 {
-                    _ = content.AppendLine($"# {(int)e.StatusCode} {e.StatusCode}");
+                    _ = errorMessage.AppendLine($"# {(int)e.StatusCode} {e.StatusCode}");
+                    Dispatcher.UIThread.Post(() => CurrentTab.Header = $"Error: {(int)e.StatusCode} {e.StatusCode}");
+                }
+                else
+                {
+                    Dispatcher.UIThread.Post(() => CurrentTab.Header = $"Error: {e.GetType().Name}");
                 }
 
-                _ = content.AppendLine($"# {e.HttpRequestError}");
-                _ = content.AppendLine($"Failed to fetch URL: {e.Message}");
-                ContentChanged();
+                _ = errorMessage.AppendLine($"# {e.HttpRequestError}");
+                _ = errorMessage.AppendLine($"Failed to fetch URL: {e.Message}");
+
+                Content = new MarkdownContentViewModel("Error", errorMessage.ToString());
             }
             catch (Exception e)
             {
-                IsBusy = false;
-                _ = content.AppendLine($"# {e.GetType().Name}");
-                _ = content.AppendLine($"Failed to fetch URL: {e.Message}");
-                ContentChanged();
+                StringBuilder errorMessage = new();
+
+                _ = errorMessage.AppendLine($"# {e.GetType().Name}");
+                _ = errorMessage.AppendLine($"Failed to fetch URL: {e.Message}");
+
+                Content = new MarkdownContentViewModel("Error", errorMessage.ToString());
+                Dispatcher.UIThread.Post(() => CurrentTab.Header = $"Error: {e.GetType().Name}");
             }
-
-            Progress = 0;
-
-            Debug.WriteLine("Converting HTML to markdown...");
-
-            string markdown = markdownConverter.Convert(html.ToString());
-
-            Debug.WriteLine("Processing markdown...");
-
-            int currentLine = 0;
-
-            string[] lines = markdown.Split('\n');
-            foreach (string line in lines)
+            finally
             {
-                Progress = (int)((double)currentLine / lines.Length * 100);
-                currentLine++;
-
-                string trimmedLine = line.Trim();
-
-                if (trimmedLine.All(c => c == '#'))
-                {
-                    _ = Content.Append(trimmedLine);
-                    continue;
-                }
-                else if (MarkdownImage().IsMatch(trimmedLine))
-                {
-                    _ = content.AppendLine()
-                    .Append(trimmedLine)
-                    .AppendLine()
-                    .AppendLine();
-                    continue;
-                }
-
-                _ = content.AppendLine(trimmedLine);
+                IsBusy = false;
             }
-
-            ContentChanged();
-
-            IsBusy = false;
         });
-    }
-
-    private void ContentChanged()
-    {
-        this.RaisePropertyChanged(nameof(Content));
-        this.RaisePropertyChanged(nameof(RawHtmlViewModel));
-        this.RaisePropertyChanged(nameof(RawMarkdownViewModel));
     }
 }

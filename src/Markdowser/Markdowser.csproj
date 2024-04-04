@@ -39,7 +39,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Processing\Processors\" />
-    <Folder Include="Views\Content\" />
+    <Compile Update="Views\Content\MarkdownContentView.axaml.cs">
+      <DependentUpon>MarkdownContentView.axaml</DependentUpon>
+    </Compile>
   </ItemGroup>
 </Project>

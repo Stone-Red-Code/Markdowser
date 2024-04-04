@@ -8,4 +8,3 @@ using System.Diagnostics.CodeAnalysis;
 [assembly: SuppressMessage("Minor Code Smell", "S1075:URIs should not be hardcoded", Justification = "<Pending>")]
 [assembly: SuppressMessage("Minor Code Smell", "CS0067:The event 'ChangeThemeCommand.CanExecuteChanged' is never used", Justification = "<Pending>", Scope = "member", Target = "~N:Markdowser.Commands")]
 [assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "<Pending>")]
-[assembly: SuppressMessage("Minor Code Smell", "S3267:Loops should be simplified with \"LINQ\" expressions", Justification = "<Pending>", Scope = "member", Target = "~M:Markdowser.Processing.ContentProcessorManager.ProcessContent(System.Net.HttpWebResponse,System.IProgress{Markdowser.Processing.ProcessingProgress})~Markdowser.ViewModels.ContentViewModelBase")]

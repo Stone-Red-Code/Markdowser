@@ -5,14 +5,13 @@
         xmlns:utils="using:Markdowser.Utilities"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:md="https://github.com/whistyun/Markdown.Avalonia"
-        xmlns:ctxt="clr-namespace:ColorTextBlock.Avalonia;assembly=ColorTextBlock.Avalonia"
         xmlns:i="https://github.com/projektanker/icons.avalonia"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="Markdowser.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="{Binding Icon}"
-        Title="{Binding Title}">
+        Title="{Binding Title}"
+        Loaded="Window_Loaded">
 
     <Design.DataContext>
         <!-- This only sets the DataContext for the previewer in an IDE,
@@ -24,14 +23,23 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary>
-                    <utils:HttpPathResolver x:Key="HttpPathResolver" />
-                    <cmd:HyperlinkCommand x:Key="HyperlinkCommand" />
                     <cmd:ChangeThemeCommand x:Key="ChangeThemeCommand" />
                     <cmd:HomeCommand x:Key="HomeCommand" />
                 </ResourceDictionary>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Window.Resources>
+
+    <Window.KeyBindings>
+        <KeyBinding Gesture="Ctrl+R" Command="{Binding Browse}" />
+        <KeyBinding Gesture="Alt+Home" Command="{StaticResource HomeCommand}" />
+        <KeyBinding Gesture="Alt+H" Command="{StaticResource HomeCommand}" />
+        <KeyBinding Gesture="Alt+Left" Command="{Binding Back}" />
+        <KeyBinding Gesture="Alt+Right" Command="{Binding Forward}" />
+        <KeyBinding Gesture="Ctrl+T" Command="{Binding NewTab}" />
+        <KeyBinding Gesture="Ctrl+W" Command="{Binding CloseTab}" />
+        <KeyBinding Gesture="Alt+S" Command="{Binding ShowSidePanel}" />
+    </Window.KeyBindings>
 
     <Grid RowDefinitions="Auto, *, Auto">
         <Grid Grid.Row="0" ColumnDefinitions="*, Auto, Auto">
@@ -47,48 +55,8 @@
                 <ColumnDefinition Width="*" utils:ColumnDefinition.IsVisible="{Binding ShowSidePanel}" />
             </Grid.ColumnDefinitions>
 
-            <md:MarkdownScrollViewer Margin="10 0 10 10" IsEnabled="{Binding !IsBusy}" Markdown="{Binding Content}">
-                <md:MarkdownScrollViewer.Styles>
-                    <Style Selector="ctxt|CTextBlock">
-                        <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
-                    </Style>
-                    <Style Selector="ctxt|CTextBlock.Heading1">
-                        <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
-                    </Style>
-                    <Style Selector="ctxt|CTextBlock.Heading2">
-                        <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
-                    </Style>
-                    <Style Selector="ctxt|CTextBlock.Heading3">
-                        <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
-                    </Style>
-                    <Style Selector="ctxt|CTextBlock.Heading4">
-                        <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
-                    </Style>
-                    <Style Selector="ctxt|CTextBlock.Heading5">
-                        <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
-                    </Style>
-                    <Style Selector="ctxt|CTextBlock.Heading6">
-                        <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
-                    </Style>
-                    <Style Selector="ctxt|CHyperlink">
-                        <Setter Property="Foreground" Value="{DynamicResource SemiColorLink}" />
-                    </Style>
-                    <Style Selector="ctxt|CHyperlink:pointerover">
-                        <Setter Property="Foreground" Value="{DynamicResource SemiColorLinkPointerover}" />
-                    </Style>
-                    <Style Selector="ctxt|CHyperlink:pressed">
-                        <Setter Property="Foreground" Value="{DynamicResource SemiColorLinkVisited}" />
-                    </Style>
-                    <Style Selector="ctxt|CImage">
-                        <Setter Property="FittingWhenProtrude" Value="True" />
-                        <Setter Property="LayoutWidth" Value="500" />
-                        <Setter Property="SaveAspectRatio" Value="True" />
-                    </Style>
-                </md:MarkdownScrollViewer.Styles>
-                <md:MarkdownScrollViewer.Plugins>
-                    <md:MdAvPlugins PathResolver="{StaticResource HttpPathResolver}" HyperlinkCommand="{StaticResource HyperlinkCommand}" />
-                </md:MarkdownScrollViewer.Plugins>
-            </md:MarkdownScrollViewer>
+            <ContentControl IsEnabled="{Binding !IsBusy}" Margin="0 10 0 0" Content="{Binding Content}" />
+
             <GridSplitter Grid.Column="1" IsVisible="{Binding ShowSidePanel}" Background="{DynamicResource SemiColorTertiary}" ResizeDirection="Columns" />
             <TabControl  Grid.Column="2" IsVisible="{Binding ShowSidePanel}" Margin="10">
                 <TabItem Header="Settings">

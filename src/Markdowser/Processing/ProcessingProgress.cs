@@ -1,9 +1,10 @@
 ﻿namespace Markdowser.Processing;
 
-public readonly struct ProcessingProgress(int current, int total)
+public readonly struct ProcessingProgress(long current, long total, string? message = null)
 {
-    public int Current { get; } = current;
-    public int Total { get; } = total;
+    public long Current { get; } = current;
+    public long Total { get; } = total;
+    public string? Message { get; } = message;
 
-    public double Percentage => (double)Current / Total * 100;
+    public int Percentage => (int)((double)Total / Current * 100);
 }
