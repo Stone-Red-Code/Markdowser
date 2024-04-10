@@ -87,7 +87,7 @@
                 <Button Grid.Column="3" i:Attached.Icon="fa-solid fa-house" Command="{StaticResource HomeCommand}" />
 
                 <Grid Grid.Column="4">
-                    <TextBox IsVisible="{Binding !IsBusy}" Watermark="Search DuckDuckGo or type a URL" Text="{Binding Url}" BorderThickness="0">
+                    <TextBox IsVisible="{Binding !IsBusy}" Watermark="Search or type a URL" Text="{Binding Url}" BorderThickness="0">
                         <TextBox.KeyBindings>
                             <KeyBinding Gesture="Enter" Command="{Binding Browse}" />
                         </TextBox.KeyBindings>

@@ -220,7 +220,14 @@ public partial class MainWindowViewModel : ViewModelBase
             else
             {
                 // Search with duckduckgo
-                Url = $"https://duckduckgo.com/html/?kd=-1&k1=-1&q={Uri.EscapeDataString(Url)}";
+                try
+                {
+                    Url = string.Format(Settings.Current.SearchEngineUrl, Uri.EscapeDataString(Url));
+                }
+                catch (FormatException ex)
+                {
+                    WindowNotificationManager.Show(new Notification("Invalid Search Engine URL", $"{ex.Message}", NotificationType.Error));
+                }
             }
         }
 

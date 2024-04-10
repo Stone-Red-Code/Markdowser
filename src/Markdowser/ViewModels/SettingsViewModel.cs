@@ -10,6 +10,12 @@ public class SettingsViewModel : ViewModelBase
         set => Settings.Current.HomeUrl = value;
     }
 
+    public string SearchEngineUrl
+    {
+        get => Settings.Current.SearchEngineUrl;
+        set => Settings.Current.SearchEngineUrl = value;
+    }
+
     public bool DarkMode
     {
         get => Settings.Current.DarkMode;
