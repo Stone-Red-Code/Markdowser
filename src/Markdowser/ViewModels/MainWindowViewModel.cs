@@ -167,6 +167,7 @@ public partial class MainWindowViewModel : ViewModelBase
         content = DefaultContent;
 
         contentProcessorManager.RegisterProcessor(new HtmlProcessor());
+        contentProcessorManager.RegisterProcessor(new CommonImageProcessor());
 
         GlobalState.UrlChanged += (sender, url) =>
         {

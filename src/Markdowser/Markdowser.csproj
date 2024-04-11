@@ -39,6 +39,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="Views\Content\CommonImageContentView.axaml.cs">
+      <DependentUpon>CommonImageContentView.axaml</DependentUpon>
+    </Compile>
     <Compile Update="Views\Content\MarkdownContentView.axaml.cs">
       <DependentUpon>MarkdownContentView.axaml</DependentUpon>
     </Compile>

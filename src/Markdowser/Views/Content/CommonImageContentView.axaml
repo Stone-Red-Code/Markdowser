@@ -1,0 +1,17 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Markdowser.ViewModels"
+             xmlns:cmd="using:Markdowser.Commands"
+             xmlns:utils="using:Markdowser.Utilities"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             xmlns:md="https://github.com/whistyun/Markdown.Avalonia"
+             xmlns:ctxt="clr-namespace:ColorTextBlock.Avalonia;assembly=ColorTextBlock.Avalonia"
+             x:DataType="vm:Content.CommonImageContentViewModel"
+             x:Class="Markdowser.Views.Content.CommonImageContentView">
+
+    <Grid>
+        <Image Source="{Binding Image}"/>
+    </Grid>
+</UserControl>
