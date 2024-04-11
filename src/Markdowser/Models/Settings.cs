@@ -11,7 +11,7 @@ public class Settings
 
     public bool DarkMode { get; set; }
 
-    public string SearchEngineUrl { get; set; } = "https://duckduckgo.com/html/?kd=-1&k1=-1&q={0}";
+    public string SearchEngineUrl { get; set; } = "https://html.duckduckgo.com/html/?kd=-1&k1=-1&q={0}";
 
     public string? HomeUrl { get; set; }
 
