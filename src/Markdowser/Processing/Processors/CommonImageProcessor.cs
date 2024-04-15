@@ -11,6 +11,11 @@ internal class CommonImageProcessor : IContentProcessor
 {
     public bool CanProcess(HttpContentHeaders httpContentHeaders)
     {
+        if (httpContentHeaders.ContentType?.MediaType == "image/svg+xml")
+        {
+            return false;
+        }
+
         return httpContentHeaders.ContentType?.MediaType?.StartsWith("image/") == true;
     }
 

@@ -185,7 +185,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         GlobalState.ContentReload += (sender, _) =>
         {
-            // Updatre icon when dark mode changes
+            // Update icon when dark mode changes
             this.RaisePropertyChanged(nameof(Icon));
             this.RaisePropertyChanged(nameof(Content));
         };
