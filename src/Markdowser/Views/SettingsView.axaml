@@ -28,5 +28,8 @@
 
         <TextBlock Text="Home URL" />
         <TextBox Text="{Binding HomeUrl}" Watermark="URL, or leave empty to use default" />
+
+        <TextBlock Text="User Agent" />
+        <TextBox Text="{Binding UserAgent}" Watermark="User agent string" />
     </StackPanel>
 </UserControl>

@@ -16,6 +16,12 @@ public class SettingsViewModel : ViewModelBase
         set => Settings.Current.SearchEngineUrl = value;
     }
 
+    public string UserAgent
+    {
+        get => Settings.Current.UserAgent;
+        set => Settings.Current.UserAgent = value;
+    }
+
     public bool DarkMode
     {
         get => Settings.Current.DarkMode;

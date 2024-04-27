@@ -161,7 +161,6 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public MainWindowViewModel()
     {
-        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd($"{nameof(Markdowser)}/{Assembly.GetExecutingAssembly().GetName().Version?.ToString()}");
         httpClient.Timeout = TimeSpan.FromSeconds(10);
 
         content = DefaultContent;
@@ -230,6 +229,13 @@ public partial class MainWindowViewModel : ViewModelBase
                     WindowNotificationManager.Show(new Notification("Invalid Search Engine URL", $"{ex.Message}", NotificationType.Error));
                 }
             }
+        }
+
+        httpClient.DefaultRequestHeaders.UserAgent.Clear();
+        if (!httpClient.DefaultRequestHeaders.UserAgent.TryParseAdd(Settings.Current.UserAgent))
+        {
+            WindowNotificationManager.Show(new Notification("Invalid User Agent", "Failed to set user agent.", NotificationType.Error));
+            return;
         }
 
         IsBusy = true;
