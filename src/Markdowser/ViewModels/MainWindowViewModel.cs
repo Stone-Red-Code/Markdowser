@@ -6,6 +6,7 @@ using Markdowser.Models;
 using Markdowser.Processing;
 using Markdowser.Processing.Processors;
 using Markdowser.Utilities;
+using Markdowser.Utilities.Markdowser.Utilities;
 using Markdowser.ViewModels.Content;
 
 using ReactiveUI;
@@ -26,6 +27,7 @@ public partial class MainWindowViewModel : ViewModelBase
 {
     private readonly HttpClient httpClient = new(new HttpClientHandler() { AllowAutoRedirect = true });
     private readonly ContentProcessorManager contentProcessorManager = new();
+    private readonly CacheService cacheService = new CacheService();
 
     private ContentViewModelBase content;
     private TabItem currentTab = null!;
@@ -196,50 +198,57 @@ public partial class MainWindowViewModel : ViewModelBase
         return Uri.TryCreate(uriString, UriKind.Absolute, out uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
     }
 
-    private void FetchUrl()
+private void FetchUrl()
+{
+    if (IsBusy)
     {
-        if (IsBusy)
-        {
-            WindowNotificationManager.Show(new Notification("Busy", "The browser is currently busy.", NotificationType.Warning));
-            return;
-        }
+        WindowNotificationManager.Show(new Notification("Busy", "The browser is currently busy.", NotificationType.Warning));
+        return;
+    }
 
-        if (string.IsNullOrWhiteSpace(Url))
-        {
-            Content = DefaultContent;
-            Debug.WriteLine("URL is empty.");
-            CurrentTab.Header = "New Tab";
-            return;
-        }
+    if (string.IsNullOrWhiteSpace(Url))
+    {
+        Content = DefaultContent;
+        Debug.WriteLine("URL is empty.");
+        CurrentTab.Header = "New Tab";
+        return;
+    }
 
-        if (!IsValidHttpUri(Url, out _))
+    if (!IsValidHttpUri(Url, out _))
+    {
+        if (Url.StartsWith("//"))
         {
-            if (Url.StartsWith("//"))
+            Url = $"https:{Url}";
+        }
+        else
+        {
+            // Search with duckduckgo
+            try
             {
-                Url = $"https:{Url}";
+                Url = string.Format(Settings.Current.SearchEngineUrl, Uri.EscapeDataString(Url));
+            }
+            catch (FormatException ex)
+            {
+                WindowNotificationManager.Show(new Notification("Invalid Search Engine URL", $"{ex.Message}", NotificationType.Error));
+            }
+        }
+    }
+
+    IsBusy = true;
+    Progress = 0;
+
+    _ = Task.Run(async () =>
+    {
+        Debug.WriteLine("Fetching URL...");
+
+        try
+        {
+            ContentViewModelBase cachedContent = cacheService.Get(Url);
+            if (cachedContent != null)
+            {
+                Content = cachedContent;
             }
             else
-            {
-                // Search with duckduckgo
-                try
-                {
-                    Url = string.Format(Settings.Current.SearchEngineUrl, Uri.EscapeDataString(Url));
-                }
-                catch (FormatException ex)
-                {
-                    WindowNotificationManager.Show(new Notification("Invalid Search Engine URL", $"{ex.Message}", NotificationType.Error));
-                }
-            }
-        }
-
-        IsBusy = true;
-        Progress = 0;
-
-        _ = Task.Run(async () =>
-        {
-            Debug.WriteLine("Fetching URL...");
-
-            try
             {
                 HttpResponseMessage httpResponseMessage = await httpClient.GetAsync(Url);
 
@@ -266,42 +275,44 @@ public partial class MainWindowViewModel : ViewModelBase
                 }
 
                 Content = await contentProcessorManager.ProcessContent(httpResponseMessage, new Progress<ProcessingProgress>(p => Progress = p.Percentage));
-
-                Dispatcher.UIThread.Post(() => CurrentTab.Header = Content.Title);
+                cacheService.Set(Url, Content);
             }
-            catch (HttpRequestException e)
+
+            Dispatcher.UIThread.Post(() => CurrentTab.Header = Content.Title);
+        }
+        catch (HttpRequestException e)
+        {
+            StringBuilder errorMessage = new();
+
+            if (e.StatusCode is not null)
             {
-                StringBuilder errorMessage = new();
-
-                if (e.StatusCode is not null)
-                {
-                    _ = errorMessage.AppendLine($"# {(int)e.StatusCode} {e.StatusCode}");
-                    Dispatcher.UIThread.Post(() => CurrentTab.Header = $"Error: {(int)e.StatusCode} {e.StatusCode}");
-                }
-                else
-                {
-                    Dispatcher.UIThread.Post(() => CurrentTab.Header = $"Error: {e.GetType().Name}");
-                }
-
-                _ = errorMessage.AppendLine($"# {e.HttpRequestError}");
-                _ = errorMessage.AppendLine($"Failed to fetch URL: {e.Message}");
-
-                Content = new MarkdownContentViewModel("Error", errorMessage.ToString());
+                _ = errorMessage.AppendLine($"# {(int)e.StatusCode} {e.StatusCode}");
+                Dispatcher.UIThread.Post(() => CurrentTab.Header = $"Error: {(int)e.StatusCode} {e.StatusCode}");
             }
-            catch (Exception e)
+            else
             {
-                StringBuilder errorMessage = new();
-
-                _ = errorMessage.AppendLine($"# {e.GetType().Name}");
-                _ = errorMessage.AppendLine($"Failed to fetch URL: {e.Message}");
-
-                Content = new MarkdownContentViewModel("Error", errorMessage.ToString());
                 Dispatcher.UIThread.Post(() => CurrentTab.Header = $"Error: {e.GetType().Name}");
             }
-            finally
-            {
-                IsBusy = false;
-            }
-        });
-    }
+
+            _ = errorMessage.AppendLine($"# {e.HttpRequestError}");
+            _ = errorMessage.AppendLine($"Failed to fetch URL: {e.Message}");
+
+            Content = new MarkdownContentViewModel("Error", errorMessage.ToString());
+        }
+        catch (Exception e)
+        {
+            StringBuilder errorMessage = new();
+
+            _ = errorMessage.AppendLine($"# {e.GetType().Name}");
+            _ = errorMessage.AppendLine($"Failed to fetch URL: {e.Message}");
+
+            Content = new MarkdownContentViewModel("Error", errorMessage.ToString());
+            Dispatcher.UIThread.Post(() => CurrentTab.Header = $"Error: {e.GetType().Name}");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    });
+}
 }

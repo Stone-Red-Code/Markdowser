@@ -8,7 +8,8 @@
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              xmlns:md="https://github.com/whistyun/Markdown.Avalonia"
              xmlns:ctxt="clr-namespace:ColorTextBlock.Avalonia;assembly=ColorTextBlock.Avalonia"
-             x:DataType="vm:Content.CommonImageContentViewModel"
+             xmlns:content="clr-namespace:Markdowser.ViewModels.Content"
+             x:DataType="content:CommonImageContentViewModel"
              x:Class="Markdowser.Views.Content.CommonImageContentView">
 
     <Grid>
