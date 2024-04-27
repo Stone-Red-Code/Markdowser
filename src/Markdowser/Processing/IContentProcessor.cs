@@ -9,6 +9,10 @@ namespace Markdowser.Processing;
 
 internal interface IContentProcessor
 {
+    string Name { get; }
+
+    string Description { get; }
+
     bool CanProcess(HttpContentHeaders httpContentHeaders);
 
     Task<ContentViewModelBase> Process(HttpResponseMessage httpResponseMessage, IProgress<ProcessingProgress> progress);

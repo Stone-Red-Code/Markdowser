@@ -19,6 +19,10 @@ internal partial class HtmlProcessor : IContentProcessor
 {
     private readonly ReverseMarkdown.Converter markdownConverter = new();
 
+    public string Name => "HTML Processor";
+
+    public string Description => "Processes HTML content";
+
     public HtmlProcessor()
     {
         markdownConverter.Config.UnknownTags = ReverseMarkdown.Config.UnknownTagsOption.Bypass;
