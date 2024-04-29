@@ -6,7 +6,6 @@ using Markdowser.Models;
 using Markdowser.Processing;
 using Markdowser.Processing.Processors;
 using Markdowser.Utilities;
-using Markdowser.Utilities.Markdowser.Utilities;
 using Markdowser.ViewModels.Content;
 
 using ReactiveUI;
@@ -103,6 +102,8 @@ public partial class MainWindowViewModel : ViewModelBase
     public bool ForwardEnabled => GlobalState.ForwardHistory.Count > 0;
     public bool ProgressIndeterminate => Progress == 0;
     public ICommand Browse => ReactiveCommand.Create(FetchUrl);
+    public ICommand Reload => ReactiveCommand.Create(FetchUrlIgnoringCache);
+    
 
     public ICommand Back => ReactiveCommand.Create(() =>
     {
@@ -308,6 +309,95 @@ private void FetchUrl()
 
             Content = new MarkdownContentViewModel("Error", errorMessage.ToString());
             Dispatcher.UIThread.Post(() => CurrentTab.Header = $"Error: {e.GetType().Name}");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    });
+}
+
+private void FetchUrlIgnoringCache()
+{
+    if (IsBusy)
+    {
+        WindowNotificationManager.Show(new Notification("Busy", "The browser is currently busy.", NotificationType.Warning));
+        return;
+    }
+
+    if (string.IsNullOrWhiteSpace(Url))
+    {
+        Content = DefaultContent;
+        Debug.WriteLine("URL is empty.");
+        CurrentTab.Header = "New Tab";
+        return;
+    }
+
+    if (!IsValidHttpUri(Url, out _))
+    {
+        if (Url.StartsWith("//"))
+        {
+            Url = $"https:{Url}";
+        }
+        else
+        {
+            // Search with duckduckgo
+            try
+            {
+                Url = string.Format(Settings.Current.SearchEngineUrl, Uri.EscapeDataString(Url));
+            }
+            catch (FormatException ex)
+            {
+                WindowNotificationManager.Show(new Notification("Invalid Search Engine URL", $"{ex.Message}", NotificationType.Error));
+            }
+        }
+    }
+
+    IsBusy = true;
+    Progress = 0;
+
+    _ = Task.Run(async () =>
+    {
+        Debug.WriteLine("Fetching URL...");
+
+        try
+        {
+            HttpResponseMessage httpResponseMessage = await httpClient.GetAsync(Url);
+
+            string? newUrl = httpResponseMessage.RequestMessage?.RequestUri?.ToString();
+
+            if (newUrl is not null && newUrl != Url)
+            {
+                string oldUrl = Url;
+                Dispatcher.UIThread.Post(() => WindowNotificationManager.Show(new Notification("Redirected", $"Redirected from\n{oldUrl}\nto\n{newUrl}", NotificationType.Warning)));
+                Url = newUrl;
+            }
+
+            if (!httpResponseMessage.IsSuccessStatusCode)
+            {
+                IsBusy = false;
+
+                StringBuilder errorMessage = new();
+
+                _ = errorMessage.AppendLine($"# {(int)httpResponseMessage.StatusCode} {httpResponseMessage.StatusCode}");
+                _ = errorMessage.AppendLine($"Failed to fetch URL: {httpResponseMessage.ReasonPhrase}");
+
+                Content = new MarkdownContentViewModel("Error", errorMessage.ToString());
+                return;
+            }
+
+            Content = await contentProcessorManager.ProcessContent(httpResponseMessage, new Progress<ProcessingProgress>(p => Progress = p.Percentage));
+            cacheService.Set(Url, Content);
+
+            Dispatcher.UIThread.Post(() => CurrentTab.Header = Content.Title);
+        }
+        catch (HttpRequestException e)
+        {
+            // Handle exception
+        }
+        catch (Exception e)
+        {
+            // Handle exception
         }
         finally
         {

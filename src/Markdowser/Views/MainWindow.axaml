@@ -32,7 +32,7 @@
 
     <Window.KeyBindings>
         <KeyBinding Gesture="Ctrl+R" Command="{Binding Browse}" />
-        <KeyBinding Gesture="F5" Command="{Binding Browse}" />
+        <KeyBinding Gesture="F5" Command="{Binding Reload}" />
         <KeyBinding Gesture="Alt+Home" Command="{StaticResource HomeCommand}" />
         <KeyBinding Gesture="Alt+H" Command="{StaticResource HomeCommand}" />
         <KeyBinding Gesture="Alt+Left" Command="{Binding Back}" />
@@ -85,6 +85,7 @@
                 <Button Grid.Column="1" i:Attached.Icon="fa-solid fa-caret-right" IsEnabled="{Binding ForwardEnabled}" Command="{Binding Forward}" />
                 <Button Grid.Column="2" i:Attached.Icon="fa-solid fa-rotate-right" Command="{Binding Browse}" />
                 <Button Grid.Column="3" i:Attached.Icon="fa-solid fa-house" Command="{StaticResource HomeCommand}" />
+                <Button Grid.Column="4" i:Attached.Icon="fa-solid fa-sync" Command="{Binding Reload}" />
 
                 <Grid Grid.Column="4">
                     <TextBox IsVisible="{Binding !IsBusy}" Watermark="Search or type a URL" Text="{Binding Url}" BorderThickness="0">
