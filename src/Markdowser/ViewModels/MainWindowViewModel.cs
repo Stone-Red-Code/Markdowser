@@ -47,7 +47,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
             _ = this.RaiseAndSetIfChanged(ref currentTab!, value);
 
-            Url = currentTab?.Tag?.ToString() ?? string.Empty;
+            Url = value?.Tag?.ToString() ?? string.Empty;
 
             FetchUrl();
         }
@@ -132,18 +132,32 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public ICommand CloseTab => ReactiveCommand.Create(() =>
     {
+        if (IsBusy)
+        {
+            WindowNotificationManager.Show(new Notification("Busy", "The browser is currently busy.", NotificationType.Warning));
+            return;
+        }
+
         if (Tabs.Count > 1)
         {
             int currentIndex = Tabs.IndexOf(CurrentTab);
-            _ = Tabs.Remove(CurrentTab);
 
             CurrentTab = currentIndex > 0 ? Tabs[currentIndex - 1] : Tabs[0];
+
+            Tabs.RemoveAt(currentIndex);
+
             this.RaisePropertyChanged(nameof(CloseTabEnabled));
         }
     });
 
     public ICommand NewTab => ReactiveCommand.Create(() =>
     {
+        if (IsBusy)
+        {
+            WindowNotificationManager.Show(new Notification("Busy", "The browser is currently busy.", NotificationType.Warning));
+            return;
+        }
+
         TabItem tab = new() { Header = "New Tab", Name = Guid.NewGuid().ToString() };
         Tabs.Add(tab);
         CurrentTab = tab;

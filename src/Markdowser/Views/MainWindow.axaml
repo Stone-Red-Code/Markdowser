@@ -45,9 +45,16 @@
 
     <Grid RowDefinitions="Auto, *, Auto">
         <Grid Grid.Row="0" ColumnDefinitions="*, Auto, Auto">
-            <TabControl Grid.Column="0" Theme="{DynamicResource ScrollTabControl}" SelectedItem="{Binding CurrentTab, Mode=TwoWay}" ItemsSource="{Binding Tabs}" />
-            <Button Grid.Column="1" Command="{Binding CloseTab}" IsEnabled="{Binding CloseTabEnabled}" HorizontalAlignment="Right" VerticalAlignment="Top" Height="32" i:Attached.Icon="fa-solid fa-xmark" />
-            <Button Grid.Column="2" Command="{Binding NewTab}" HorizontalAlignment="Right" VerticalAlignment="Top" Height="32" i:Attached.Icon="fa-solid fa-plus" />
+            <TabControl Grid.Column="0" Theme="{DynamicResource ScrollTabControl}" SelectedItem="{Binding CurrentTab, Mode=TwoWay}" ItemsSource="{Binding Tabs}" IsEnabled="{Binding !IsBusy}" />
+            <Button Grid.Column="1" Command="{Binding CloseTab}" HorizontalAlignment="Right" VerticalAlignment="Top" Height="32" i:Attached.Icon="fa-solid fa-xmark">
+                <Button.IsEnabled>
+                    <MultiBinding Converter="{x:Static BoolConverters.And}">
+                        <Binding Path="CloseTabEnabled" />
+                        <Binding Path="!IsBusy" />
+                    </MultiBinding>
+                </Button.IsEnabled>
+            </Button>
+            <Button Grid.Column="2" Command="{Binding NewTab}" HorizontalAlignment="Right" VerticalAlignment="Top" Height="32" i:Attached.Icon="fa-solid fa-plus" IsEnabled="{Binding !IsBusy}" />
         </Grid>
 
         <Grid Grid.Row="1">
@@ -80,11 +87,25 @@
         </Grid>
 
         <Border Grid.Row="2" BorderThickness="0 2 0 0" CornerRadius="0" BorderBrush="{DynamicResource SemiColorTertiary}">
-            <Grid IsEnabled="{Binding !IsBusy}" ColumnDefinitions="Auto, Auto, Auto, Auto, *, Auto">
-                <Button Grid.Column="0" i:Attached.Icon="fa-solid fa-caret-left" IsEnabled="{Binding BackEnabled}" Command="{Binding Back}" />
-                <Button Grid.Column="1" i:Attached.Icon="fa-solid fa-caret-right" IsEnabled="{Binding ForwardEnabled}" Command="{Binding Forward}" />
-                <Button Grid.Column="2" i:Attached.Icon="fa-solid fa-rotate-right" Command="{Binding Browse}" />
-                <Button Grid.Column="3" i:Attached.Icon="fa-solid fa-house" Command="{StaticResource HomeCommand}" />
+            <Grid ColumnDefinitions="Auto, Auto, Auto, Auto, *, Auto">
+                <Button Grid.Column="0" i:Attached.Icon="fa-solid fa-caret-left" Command="{Binding Back}">
+                    <Button.IsEnabled>
+                        <MultiBinding Converter="{x:Static BoolConverters.And}">
+                            <Binding Path="BackEnabled" />
+                            <Binding Path="!IsBusy" />
+                        </MultiBinding>
+                    </Button.IsEnabled>
+                </Button>
+                <Button Grid.Column="1" i:Attached.Icon="fa-solid fa-caret-right" Command="{Binding Forward}">
+                    <Button.IsEnabled>
+                        <MultiBinding Converter="{x:Static BoolConverters.And}">
+                            <Binding Path="ForwardEnabled" />
+                            <Binding Path="!IsBusy" />
+                        </MultiBinding>
+                    </Button.IsEnabled>
+                </Button>
+                <Button Grid.Column="2" i:Attached.Icon="fa-solid fa-rotate-right" Command="{Binding Browse}" IsEnabled="{Binding !IsBusy}" />
+                <Button Grid.Column="3" i:Attached.Icon="fa-solid fa-house" Command="{StaticResource HomeCommand}" IsEnabled="{Binding !IsBusy}" />
 
                 <Grid Grid.Column="4">
                     <TextBox IsVisible="{Binding !IsBusy}" Watermark="Search or type a URL" Text="{Binding Url}" BorderThickness="0">
