@@ -79,5 +79,7 @@ public class HttpPathResolver : IPathResolver
         {
             Dispatcher.UIThread.Post(() => vm.WindowNotificationManager.Show(new Notification("Error", message, NotificationType.Error)));
         }
+
+        GlobalState.Logger.LogError(message);
     }
 }
