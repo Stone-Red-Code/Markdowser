@@ -10,7 +10,6 @@ using Markdowser.Models;
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -40,7 +39,7 @@ public class HttpPathResolver : IPathResolver
             relativeOrAbsolutePath = new Uri(new Uri(GlobalState.Url), relativeOrAbsolutePath).ToString();
         }
 
-        Debug.WriteLine($"Resolving image: {relativeOrAbsolutePath}");
+        GlobalState.Logger.LogDebug($"Resolving image: {relativeOrAbsolutePath}");
 
         HttpResponseMessage httpResponseMessage;
 

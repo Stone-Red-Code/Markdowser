@@ -12,7 +12,6 @@ using ReactiveUI;
 
 using System;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Http;
 using System.Reflection;
@@ -220,7 +219,7 @@ public partial class MainWindowViewModel : ViewModelBase
         if (string.IsNullOrWhiteSpace(Url))
         {
             Content = DefaultContent;
-            Debug.WriteLine("URL is empty.");
+            Logger.LogDebug("URL is empty.");
             CurrentTab.Header = "New Tab";
             return;
         }
@@ -257,7 +256,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         _ = Task.Run(async () =>
         {
-            Debug.WriteLine("Fetching URL...");
+            Logger.LogInfo($"Fetching URL: {Url}");
 
             try
             {
@@ -288,6 +287,8 @@ public partial class MainWindowViewModel : ViewModelBase
                 Content = await contentProcessorManager.ProcessContent(httpResponseMessage, new Progress<ProcessingProgress>(p => Progress = p.Percentage));
 
                 Dispatcher.UIThread.Post(() => CurrentTab.Header = Content.Title);
+
+                Logger.LogInfo($"Fetched URL: {Url}");
             }
             catch (HttpRequestException e)
             {
@@ -307,6 +308,8 @@ public partial class MainWindowViewModel : ViewModelBase
                 _ = errorMessage.AppendLine($"Failed to fetch URL: {e.Message}");
 
                 Content = new MarkdownContentViewModel("Error", errorMessage.ToString());
+
+                Logger.LogError(e.Message);
             }
             catch (Exception e)
             {
@@ -317,6 +320,8 @@ public partial class MainWindowViewModel : ViewModelBase
 
                 Content = new MarkdownContentViewModel("Error", errorMessage.ToString());
                 Dispatcher.UIThread.Post(() => CurrentTab.Header = $"Error: {e.GetType().Name}");
+
+                Logger.LogError(e.Message);
             }
             finally
             {

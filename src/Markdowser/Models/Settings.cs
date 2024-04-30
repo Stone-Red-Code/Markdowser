@@ -1,5 +1,6 @@
 ﻿using Markdowser.Utilities;
 
+using System;
 using System.IO;
 using System.Reflection;
 using System.Text.Json;
@@ -32,7 +33,15 @@ public class Settings
     {
         if (File.Exists(Configuration.SettingsFilePath))
         {
-            return JsonSerializer.Deserialize<Settings>(File.ReadAllText(Configuration.SettingsFilePath)) ?? new Settings();
+            try
+            {
+                return JsonSerializer.Deserialize<Settings>(File.ReadAllText(Configuration.SettingsFilePath)) ?? new Settings();
+            }
+            catch (Exception ex)
+            {
+                GlobalState.Logger.LogWarn(ex.Message);
+                return new Settings();
+            }
         }
         else
         {

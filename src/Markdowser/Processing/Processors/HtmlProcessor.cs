@@ -1,10 +1,10 @@
 ﻿using HtmlAgilityPack;
 
+using Markdowser.Utilities;
 using Markdowser.ViewModels;
 using Markdowser.ViewModels.Content;
 
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -56,11 +56,11 @@ internal partial class HtmlProcessor : IContentProcessor
         htmlDoc.LoadHtml(html.ToString());
         string title = htmlDoc.DocumentNode.SelectSingleNode("html/head/title")?.InnerText?.Trim() ?? httpResponseMessage.RequestMessage?.RequestUri?.ToString() ?? "Untitled";
 
-        Debug.WriteLine("Converting HTML to markdown...");
+        GlobalState.Logger.LogDebug("Converting HTML to markdown...");
 
         string markdown = markdownConverter.Convert(html.ToString());
 
-        Debug.WriteLine("Processing markdown...");
+        GlobalState.Logger.LogDebug("Processing markdown...");
 
         int currentLine = 0;
 

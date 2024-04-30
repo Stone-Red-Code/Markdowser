@@ -1,7 +1,6 @@
 ﻿using Markdowser.Utilities;
 
 using System;
-using System.Diagnostics;
 using System.Windows.Input;
 
 namespace Markdowser.Commands;
@@ -23,7 +22,7 @@ public class HyperlinkCommand : ICommand
     {
         if (parameter is string url)
         {
-            Debug.WriteLine($"Hyperlink clicked: {url}");
+            GlobalState.Logger.LogDebug($"Hyperlink clicked: {url}");
 
             if (Uri.IsWellFormedUriString(url, UriKind.Absolute))
             {
@@ -35,7 +34,7 @@ public class HyperlinkCommand : ICommand
             }
             else
             {
-                Debug.WriteLine($"Invalid URL: {url}");
+                GlobalState.Logger.LogDebug($"Invalid URL: {url}");
             }
         }
     }

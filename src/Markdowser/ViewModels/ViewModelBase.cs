@@ -2,7 +2,10 @@
 using Avalonia.Controls.Notifications;
 using Avalonia.Platform;
 
+using CuteUtils.Logging;
+
 using Markdowser.Models;
+using Markdowser.Utilities;
 
 using ReactiveUI;
 
@@ -18,6 +21,8 @@ public class ViewModelBase : ReactiveObject
     public WindowIcon Icon => Settings.Current.DarkMode ? new WindowIcon(AssetLoader.Open(new("avares://Markdowser/Assets/Markdowser-Dark-Transparent.ico"))) : new WindowIcon(AssetLoader.Open(new("avares://Markdowser/Assets/Markdowser-Light-Transparent.ico")));
 
     public WindowNotificationManager WindowNotificationManager => windowNotificationManager!;
+
+    public Logger Logger => GlobalState.Logger;
 
     protected internal void InitializeWindowNotificationManager(Window window)
     {
