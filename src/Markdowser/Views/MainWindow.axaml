@@ -31,7 +31,7 @@
     </Window.Resources>
 
     <Window.KeyBindings>
-        <KeyBinding Gesture="Ctrl+R" Command="{Binding Browse}" />
+        <KeyBinding Gesture="Ctrl+R" Command="{Binding Reload}" />
         <KeyBinding Gesture="F5" Command="{Binding Reload}" />
         <KeyBinding Gesture="Alt+Home" Command="{StaticResource HomeCommand}" />
         <KeyBinding Gesture="Alt+H" Command="{StaticResource HomeCommand}" />
