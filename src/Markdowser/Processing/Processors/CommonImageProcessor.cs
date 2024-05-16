@@ -7,8 +7,13 @@ using System.Net.Http.Headers;
 using System.Threading.Tasks;
 
 namespace Markdowser.Processing.Processors;
+
 internal class CommonImageProcessor : IContentProcessor
 {
+    public string Name => "Common Image Processor";
+
+    public string Description => "Processes common image types (e.g. PNG, JPEG, GIF)";
+
     public bool CanProcess(HttpContentHeaders httpContentHeaders)
     {
         if (httpContentHeaders.ContentType?.MediaType == "image/svg+xml")

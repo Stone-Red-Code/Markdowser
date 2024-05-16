@@ -12,7 +12,6 @@ using ReactiveUI;
 
 using System;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Http;
 using System.Reflection;
@@ -48,7 +47,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
             _ = this.RaiseAndSetIfChanged(ref currentTab!, value);
 
-            Url = currentTab?.Tag?.ToString() ?? string.Empty;
+            Url = value?.Tag?.ToString() ?? string.Empty;
 
             FetchUrl(true);
         }
@@ -134,18 +133,32 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public ICommand CloseTab => ReactiveCommand.Create(() =>
     {
+        if (IsBusy)
+        {
+            WindowNotificationManager.Show(new Notification("Busy", "The browser is currently busy.", NotificationType.Warning));
+            return;
+        }
+
         if (Tabs.Count > 1)
         {
             int currentIndex = Tabs.IndexOf(CurrentTab);
-            _ = Tabs.Remove(CurrentTab);
 
             CurrentTab = currentIndex > 0 ? Tabs[currentIndex - 1] : Tabs[0];
+
+            Tabs.RemoveAt(currentIndex);
+
             this.RaisePropertyChanged(nameof(CloseTabEnabled));
         }
     });
 
     public ICommand NewTab => ReactiveCommand.Create(() =>
     {
+        if (IsBusy)
+        {
+            WindowNotificationManager.Show(new Notification("Busy", "The browser is currently busy.", NotificationType.Warning));
+            return;
+        }
+
         TabItem tab = new() { Header = "New Tab", Name = Guid.NewGuid().ToString() };
         Tabs.Add(tab);
         CurrentTab = tab;
@@ -163,7 +176,6 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public MainWindowViewModel()
     {
-        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd($"{nameof(Markdowser)}/{Assembly.GetExecutingAssembly().GetName().Version?.ToString()}");
         httpClient.Timeout = TimeSpan.FromSeconds(10);
 
         content = DefaultContent;
@@ -209,7 +221,7 @@ public partial class MainWindowViewModel : ViewModelBase
         if (string.IsNullOrWhiteSpace(Url))
         {
             Content = DefaultContent;
-            Debug.WriteLine("URL is empty.");
+            Logger.LogDebug("URL is empty.");
             CurrentTab.Header = "New Tab";
             return;
         }
@@ -234,12 +246,19 @@ public partial class MainWindowViewModel : ViewModelBase
             }
         }
 
+        httpClient.DefaultRequestHeaders.UserAgent.Clear();
+        if (!httpClient.DefaultRequestHeaders.UserAgent.TryParseAdd(Settings.Current.UserAgent))
+        {
+            WindowNotificationManager.Show(new Notification("Invalid User Agent", "Failed to set user agent.", NotificationType.Error));
+            return;
+        }
+
         IsBusy = true;
         Progress = 0;
 
         _ = Task.Run(async () =>
         {
-            Debug.WriteLine("Fetching URL...");
+            Logger.LogInfo($"Fetching URL: {Url}");
 
             try
             {
@@ -279,6 +298,8 @@ public partial class MainWindowViewModel : ViewModelBase
                 }
 
                 Dispatcher.UIThread.Post(() => CurrentTab.Header = Content.Title);
+
+                Logger.LogInfo($"Fetched URL: {Url}");
             }
             catch (HttpRequestException e)
             {
@@ -298,6 +319,8 @@ public partial class MainWindowViewModel : ViewModelBase
                 _ = errorMessage.AppendLine($"Failed to fetch URL: {e.Message}");
 
                 Content = new MarkdownContentViewModel("Error", errorMessage.ToString());
+
+                Logger.LogError(e.Message);
             }
             catch (Exception e)
             {
@@ -308,6 +331,8 @@ public partial class MainWindowViewModel : ViewModelBase
 
                 Content = new MarkdownContentViewModel("Error", errorMessage.ToString());
                 Dispatcher.UIThread.Post(() => CurrentTab.Header = $"Error: {e.GetType().Name}");
+
+                Logger.LogError(e.Message);
             }
             finally
             {
