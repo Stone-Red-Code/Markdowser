@@ -83,9 +83,8 @@
             <Grid IsEnabled="{Binding !IsBusy}" ColumnDefinitions="Auto, Auto, Auto, Auto, *, Auto">
                 <Button Grid.Column="0" i:Attached.Icon="fa-solid fa-caret-left" IsEnabled="{Binding BackEnabled}" Command="{Binding Back}" />
                 <Button Grid.Column="1" i:Attached.Icon="fa-solid fa-caret-right" IsEnabled="{Binding ForwardEnabled}" Command="{Binding Forward}" />
-                <Button Grid.Column="2" i:Attached.Icon="fa-solid fa-rotate-right" Command="{Binding Browse}" />
+                <Button Grid.Column="2" i:Attached.Icon="fa-solid fa-rotate-right" Command="{Binding Reload}" />
                 <Button Grid.Column="3" i:Attached.Icon="fa-solid fa-house" Command="{StaticResource HomeCommand}" />
-                <Button Grid.Column="4" i:Attached.Icon="fa-solid fa-sync" Command="{Binding Reload}" />
 
                 <Grid Grid.Column="4">
                     <TextBox IsVisible="{Binding !IsBusy}" Watermark="Search or type a URL" Text="{Binding Url}" BorderThickness="0">
