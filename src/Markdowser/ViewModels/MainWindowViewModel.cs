@@ -25,6 +25,7 @@ public partial class MainWindowViewModel : ViewModelBase
 {
     private readonly HttpClient httpClient = new(new HttpClientHandler() { AllowAutoRedirect = true });
     private readonly ContentProcessorManager contentProcessorManager = new();
+    private readonly CacheService cacheService = new CacheService();
 
     private ContentViewModelBase content;
     private TabItem currentTab = null!;
@@ -48,7 +49,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
             Url = value?.Tag?.ToString() ?? string.Empty;
 
-            FetchUrl();
+            FetchUrl(true);
         }
     }
 
@@ -99,7 +100,8 @@ public partial class MainWindowViewModel : ViewModelBase
     public bool BackEnabled => GlobalState.BackHistory.Count > 0;
     public bool ForwardEnabled => GlobalState.ForwardHistory.Count > 0;
     public bool ProgressIndeterminate => Progress == 0;
-    public ICommand Browse => ReactiveCommand.Create(FetchUrl);
+    public ICommand Browse => ReactiveCommand.Create(() => FetchUrl(true));
+    public ICommand Reload => ReactiveCommand.Create(() => FetchUrl(false));
 
     public ICommand Back => ReactiveCommand.Create(() =>
     {
@@ -208,7 +210,7 @@ public partial class MainWindowViewModel : ViewModelBase
         return Uri.TryCreate(uriString, UriKind.Absolute, out uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
     }
 
-    private void FetchUrl()
+    private void FetchUrl(bool useCache = true)
     {
         if (IsBusy)
         {
@@ -260,31 +262,40 @@ public partial class MainWindowViewModel : ViewModelBase
 
             try
             {
-                HttpResponseMessage httpResponseMessage = await httpClient.GetAsync(Url);
-
-                string? newUrl = httpResponseMessage.RequestMessage?.RequestUri?.ToString();
-
-                if (newUrl is not null && newUrl != Url)
+                ContentViewModelBase? cachedContent = cacheService.Get(Url);
+                if (cachedContent is not null && useCache)
                 {
-                    string oldUrl = Url;
-                    Dispatcher.UIThread.Post(() => WindowNotificationManager.Show(new Notification("Redirected", $"Redirected from\n{oldUrl}\nto\n{newUrl}", NotificationType.Warning)));
-                    Url = newUrl;
+                    Content = cachedContent;
                 }
-
-                if (!httpResponseMessage.IsSuccessStatusCode)
+                else
                 {
-                    IsBusy = false;
+                    HttpResponseMessage httpResponseMessage = await httpClient.GetAsync(Url);
 
-                    StringBuilder errorMessage = new();
+                    string? newUrl = httpResponseMessage.RequestMessage?.RequestUri?.ToString();
 
-                    _ = errorMessage.AppendLine($"# {(int)httpResponseMessage.StatusCode} {httpResponseMessage.StatusCode}");
-                    _ = errorMessage.AppendLine($"Failed to fetch URL: {httpResponseMessage.ReasonPhrase}");
+                    if (newUrl is not null && newUrl != Url)
+                    {
+                        string oldUrl = Url;
+                        Dispatcher.UIThread.Post(() => WindowNotificationManager.Show(new Notification("Redirected", $"Redirected from\n{oldUrl}\nto\n{newUrl}", NotificationType.Warning)));
+                        Url = newUrl;
+                    }
 
-                    Content = new MarkdownContentViewModel("Error", errorMessage.ToString());
-                    return;
+                    if (!httpResponseMessage.IsSuccessStatusCode)
+                    {
+                        IsBusy = false;
+
+                        StringBuilder errorMessage = new();
+
+                        _ = errorMessage.AppendLine($"# {(int)httpResponseMessage.StatusCode} {httpResponseMessage.StatusCode}");
+                        _ = errorMessage.AppendLine($"Failed to fetch URL: {httpResponseMessage.ReasonPhrase}");
+
+                        Content = new MarkdownContentViewModel("Error", errorMessage.ToString());
+                        return;
+                    }
+
+                    Content = await contentProcessorManager.ProcessContent(httpResponseMessage, new Progress<ProcessingProgress>(p => Progress = p.Percentage));
+                    cacheService.Set(Url, Content);
                 }
-
-                Content = await contentProcessorManager.ProcessContent(httpResponseMessage, new Progress<ProcessingProgress>(p => Progress = p.Percentage));
 
                 Dispatcher.UIThread.Post(() => CurrentTab.Header = Content.Title);
 

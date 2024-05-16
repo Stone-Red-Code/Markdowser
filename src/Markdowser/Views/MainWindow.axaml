@@ -31,8 +31,8 @@
     </Window.Resources>
 
     <Window.KeyBindings>
-        <KeyBinding Gesture="Ctrl+R" Command="{Binding Browse}" />
-        <KeyBinding Gesture="F5" Command="{Binding Browse}" />
+        <KeyBinding Gesture="Ctrl+R" Command="{Binding Reload}" />
+        <KeyBinding Gesture="F5" Command="{Binding Reload}" />
         <KeyBinding Gesture="Alt+Home" Command="{StaticResource HomeCommand}" />
         <KeyBinding Gesture="Alt+H" Command="{StaticResource HomeCommand}" />
         <KeyBinding Gesture="Alt+Left" Command="{Binding Back}" />
@@ -104,7 +104,7 @@
                         </MultiBinding>
                     </Button.IsEnabled>
                 </Button>
-                <Button Grid.Column="2" i:Attached.Icon="fa-solid fa-rotate-right" Command="{Binding Browse}" IsEnabled="{Binding !IsBusy}" />
+                <Button Grid.Column="2" i:Attached.Icon="fa-solid fa-rotate-right" Command="{Binding Reload}" IsEnabled="{Binding !IsBusy}" />
                 <Button Grid.Column="3" i:Attached.Icon="fa-solid fa-house" Command="{StaticResource HomeCommand}" IsEnabled="{Binding !IsBusy}" />
 
                 <Grid Grid.Column="4">
