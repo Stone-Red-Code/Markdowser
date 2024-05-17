@@ -30,7 +30,7 @@ internal class ChangeThemeCommand : ICommand
             ThemeVariant theme = app.ActualThemeVariant;
             app.RequestedThemeVariant = theme == ThemeVariant.Dark ? ThemeVariant.Light : ThemeVariant.Dark;
             Settings.Current.DarkMode = app.RequestedThemeVariant == ThemeVariant.Dark;
-            GlobalState.ReloadContent(this);
+            GlobalState.InvokeThemeChanged();
         }
     }
 }

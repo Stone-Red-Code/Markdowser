@@ -21,6 +21,6 @@ internal class HomeCommand : ICommand
 
     public void Execute(object? parameter)
     {
-        GlobalState.Url = Settings.Current.HomeUrl ?? string.Empty;
+        GlobalState.CurrentTabState.Url = Settings.Current.HomeUrl ?? string.Empty;
     }
 }

@@ -27,29 +27,47 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly ContentProcessorManager contentProcessorManager = new();
     private readonly CacheService cacheService = new CacheService();
 
-    private ContentViewModelBase content;
     private TabItem currentTab = null!;
     private WindowState windowState;
     private bool showSidePanel;
     private bool isBusy;
     private int progress;
-    public ObservableCollection<TabItem> Tabs => GlobalState.Tabs;
+    public ObservableCollection<TabItem> Tabs { get; } = [new TabItem() { Header = "New Tab" }];
 
     public TabItem CurrentTab
     {
         get => currentTab;
         set
         {
-            if (currentTab is not null)
-            {
-                currentTab.Tag = Url;
-            }
+            CurrentTabState.UrlChanged -= UrlChanged;
 
             _ = this.RaiseAndSetIfChanged(ref currentTab!, value);
+            this.RaisePropertyChanged(nameof(CurrentTabState));
+            this.RaisePropertyChanged(nameof(Url));
+            this.RaisePropertyChanged(nameof(BackEnabled));
+            this.RaisePropertyChanged(nameof(ForwardEnabled));
 
-            Url = value?.Tag?.ToString() ?? string.Empty;
+            GlobalState.CurrentTabState = CurrentTabState;
+            CurrentTabState.UrlChanged += UrlChanged;
 
             FetchUrl(true);
+        }
+    }
+
+    public TabState CurrentTabState
+    {
+        get
+        {
+            if (CurrentTab is null)
+            {
+                return new();
+            }
+
+            return Dispatcher.UIThread.Invoke(() =>
+            {
+                CurrentTab.Tag ??= new TabState();
+                return (TabState)CurrentTab.Tag;
+            });
         }
     }
 
@@ -61,14 +79,18 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public ContentViewModelBase Content
     {
-        get => content;
-        set => this.RaiseAndSetIfChanged(ref content, value);
+        get => CurrentTabState.Content!;
+        set
+        {
+            CurrentTabState.Content = value;
+            this.RaisePropertyChanged();
+        }
     }
 
     public string Url
     {
-        get => GlobalState.Url;
-        set => GlobalState.SetUrl(this, value);
+        get => CurrentTabState.Url;
+        set => CurrentTabState.SetUrl(value, this);
     }
 
     public bool ShowSidePanel
@@ -97,18 +119,18 @@ public partial class MainWindowViewModel : ViewModelBase
     public RawHtmlViewModel RawHtmlViewModel => new RawHtmlViewModel(new());
     public RawMarkdownViewModel RawMarkdownViewModel => new RawMarkdownViewModel(() => new());
     public bool CloseTabEnabled => Tabs.Count > 1;
-    public bool BackEnabled => GlobalState.BackHistory.Count > 0;
-    public bool ForwardEnabled => GlobalState.ForwardHistory.Count > 0;
+    public bool BackEnabled => CurrentTabState.BackHistory.Count > 0;
+    public bool ForwardEnabled => CurrentTabState.ForwardHistory.Count > 0;
     public bool ProgressIndeterminate => Progress == 0;
     public ICommand Browse => ReactiveCommand.Create(() => FetchUrl(true));
     public ICommand Reload => ReactiveCommand.Create(() => FetchUrl(false));
 
     public ICommand Back => ReactiveCommand.Create(() =>
     {
-        if (GlobalState.BackHistory.Count > 0)
+        if (CurrentTabState.BackHistory.Count > 0)
         {
-            GlobalState.ForwardHistory.Push(GlobalState.Url);
-            Url = GlobalState.BackHistory.Pop();
+            CurrentTabState.ForwardHistory.Push(CurrentTabState.Url);
+            Url = CurrentTabState.BackHistory.Pop();
             FetchUrl();
 
             this.RaisePropertyChanged(nameof(BackEnabled));
@@ -118,10 +140,10 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public ICommand Forward => ReactiveCommand.Create(() =>
     {
-        if (GlobalState.ForwardHistory.Count > 0)
+        if (CurrentTabState.ForwardHistory.Count > 0)
         {
-            GlobalState.BackHistory.Push(GlobalState.Url);
-            Url = GlobalState.ForwardHistory.Pop();
+            CurrentTabState.BackHistory.Push(CurrentTabState.Url);
+            Url = CurrentTabState.ForwardHistory.Pop();
             FetchUrl();
 
             this.RaisePropertyChanged(nameof(ForwardEnabled));
@@ -178,30 +200,14 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         httpClient.Timeout = TimeSpan.FromSeconds(10);
 
-        content = DefaultContent;
+        Tabs[0].Tag = new TabState() { Content = DefaultContent };
 
         contentProcessorManager.RegisterProcessor(new HtmlProcessor());
         contentProcessorManager.RegisterProcessor(new CommonImageProcessor());
 
-        GlobalState.UrlChanged += (sender, url) =>
+        GlobalState.ThemeChanged += (s, e) =>
         {
-            this.RaisePropertyChanged(nameof(ForwardEnabled));
-            this.RaisePropertyChanged(nameof(BackEnabled));
-            this.RaisePropertyChanged(nameof(Url));
-
-            if (sender == this)
-            {
-                return;
-            }
-
-            FetchUrl();
-        };
-
-        GlobalState.ContentReload += (sender, _) =>
-        {
-            // Update icon when dark mode changes
             this.RaisePropertyChanged(nameof(Icon));
-            this.RaisePropertyChanged(nameof(Content));
         };
     }
 
@@ -272,10 +278,10 @@ public partial class MainWindowViewModel : ViewModelBase
                     HttpResponseMessage httpResponseMessage = await httpClient.GetAsync(Url);
 
                     string? newUrl = httpResponseMessage.RequestMessage?.RequestUri?.ToString();
+                    string oldUrl = Url;
 
                     if (newUrl is not null && newUrl != Url)
                     {
-                        string oldUrl = Url;
                         Dispatcher.UIThread.Post(() => WindowNotificationManager.Show(new Notification("Redirected", $"Redirected from\n{oldUrl}\nto\n{newUrl}", NotificationType.Warning)));
                         Url = newUrl;
                     }
@@ -294,6 +300,12 @@ public partial class MainWindowViewModel : ViewModelBase
                     }
 
                     Content = await contentProcessorManager.ProcessContent(httpResponseMessage, new Progress<ProcessingProgress>(p => Progress = p.Percentage));
+
+                    if (oldUrl != Url)
+                    {
+                        cacheService.Set(oldUrl, Content);
+                    }
+
                     cacheService.Set(Url, Content);
                 }
 
@@ -339,5 +351,19 @@ public partial class MainWindowViewModel : ViewModelBase
                 IsBusy = false;
             }
         });
+    }
+
+    private void UrlChanged(object? sender, EventArgs e)
+    {
+        this.RaisePropertyChanged(nameof(ForwardEnabled));
+        this.RaisePropertyChanged(nameof(BackEnabled));
+        this.RaisePropertyChanged(nameof(Url));
+
+        if (sender == this)
+        {
+            return;
+        }
+
+        FetchUrl();
     }
 }

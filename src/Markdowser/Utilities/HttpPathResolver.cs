@@ -36,7 +36,7 @@ public class HttpPathResolver : IPathResolver
 
         if (!Uri.IsWellFormedUriString(relativeOrAbsolutePath, UriKind.Absolute))
         {
-            relativeOrAbsolutePath = new Uri(new Uri(GlobalState.Url), relativeOrAbsolutePath).ToString();
+            relativeOrAbsolutePath = new Uri(new Uri(GlobalState.CurrentTabState.Url), relativeOrAbsolutePath).ToString();
         }
 
         GlobalState.Logger.LogDebug($"Resolving image: {relativeOrAbsolutePath}");
