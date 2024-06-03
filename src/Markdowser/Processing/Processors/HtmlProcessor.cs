@@ -90,7 +90,10 @@ internal partial class HtmlProcessor : IContentProcessor
             _ = finalMarkdown.AppendLine(trimmedLine);
         }
 
-        return new MarkdownContentViewModel(title, finalMarkdown.ToString());
+        return new MarkdownContentViewModel(title, finalMarkdown.ToString())
+        {
+            RawContent = html.ToString()
+        };
     }
 
     [GeneratedRegex("!\\[(.*?)\\]\\((.*?)\\)")]

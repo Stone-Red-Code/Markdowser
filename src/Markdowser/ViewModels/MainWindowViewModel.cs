@@ -84,8 +84,11 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             CurrentTabState.Content = value;
             this.RaisePropertyChanged();
+            this.RaisePropertyChanged(nameof(RawContent));
         }
     }
+
+    public string RawContent => string.IsNullOrWhiteSpace(Content.RawContent) ? "No raw content." : Content.RawContent;
 
     public string Url
     {
@@ -116,8 +119,6 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
     public SettingsViewModel SettingsViewModel => new SettingsViewModel();
-    public RawHtmlViewModel RawHtmlViewModel => new RawHtmlViewModel(new());
-    public RawMarkdownViewModel RawMarkdownViewModel => new RawMarkdownViewModel(() => new());
     public bool CloseTabEnabled => Tabs.Count > 1;
     public bool BackEnabled => CurrentTabState.BackHistory.Count > 0;
     public bool ForwardEnabled => CurrentTabState.ForwardHistory.Count > 0;

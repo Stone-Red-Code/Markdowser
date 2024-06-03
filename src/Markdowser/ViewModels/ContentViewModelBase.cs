@@ -8,5 +8,7 @@ public abstract class ContentViewModelBase(string title)
 {
     public string Title { get; } = title;
 
-    public Logger Logger { get; } = GlobalState.Logger;
+    public string RawContent { get; init; } = string.Empty;
+
+    public Logger Logger => GlobalState.Logger;
 }

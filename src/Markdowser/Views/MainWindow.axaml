@@ -73,14 +73,9 @@
                         <ContentControl Margin="0 10 0 0" Content="{Binding SettingsViewModel}" />
                     </ScrollViewer>
                 </TabItem>
-                <TabItem Header="Markdown">
+                <TabItem Header="Raw Content">
                     <ScrollViewer>
-                        <ContentControl Margin="0 10 0 0" Content="{Binding RawMarkdownViewModel}" />
-                    </ScrollViewer>
-                </TabItem>
-                <TabItem Header="HTML">
-                    <ScrollViewer>
-                        <ContentControl Margin="0 10 0 0" Content="{Binding RawHtmlViewModel}" />
+                        <SelectableTextBlock Margin="0 10 0 0" Text="{Binding RawContent}" TextWrapping="Wrap" />
                     </ScrollViewer>
                 </TabItem>
             </TabControl>
