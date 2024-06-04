@@ -52,7 +52,14 @@ public partial class MainWindowViewModel : ViewModelBase
             GlobalState.CurrentTabState = CurrentTabState;
             CurrentTabState.UrlChanged += UrlChanged;
 
-            FetchUrl(true);
+            if (CurrentTabState.Content is null)
+            {
+                FetchUrl(true);
+            }
+            else
+            {
+                Content = CurrentTabState.Content;
+            }
         }
     }
 
