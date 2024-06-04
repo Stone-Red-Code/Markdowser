@@ -10,5 +10,7 @@ public abstract class ContentViewModelBase(string title)
 
     public string RawContent { get; init; } = string.Empty;
 
+    public bool Cacheable { get; init; } = true;
+
     public Logger Logger => GlobalState.Logger;
 }
