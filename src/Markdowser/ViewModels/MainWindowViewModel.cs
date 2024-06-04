@@ -381,9 +381,6 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private void UpdateProgress(ProcessingProgress progress)
     {
-        Progress = progress.Current;
-        ProgressMax = progress.Total;
-
         if (progress.IsBytes)
         {
             ProgressText = $"{progress.Message} ({{1:0}}%) {BytesToString.Convert((long)Progress)}/{BytesToString.Convert((long)ProgressMax)}";
@@ -392,6 +389,9 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             ProgressText = $"{progress.Message} ({{1:0}}%) {{0}}/{{3}}";
         }
+
+        ProgressMax = progress.Total;
+        Progress = progress.Current;
     }
 
     private void UrlChanged(object? sender, EventArgs e)

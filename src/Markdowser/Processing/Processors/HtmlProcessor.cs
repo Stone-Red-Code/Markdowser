@@ -49,7 +49,7 @@ internal partial class HtmlProcessor : IContentProcessor
         {
             _ = html.AppendLine(await streamReader.ReadLineAsync());
 
-            progress.Report(new ProcessingProgress(contentStream.Position, length));
+            progress.Report(new ProcessingProgress(Encoding.Default.GetByteCount(html.ToString()), length, "Downloading HTML...", true));
         }
 
         HtmlDocument htmlDoc = new HtmlDocument();
@@ -68,7 +68,7 @@ internal partial class HtmlProcessor : IContentProcessor
 
         foreach (string line in lines)
         {
-            progress.Report(new ProcessingProgress(lines.Length, currentLine));
+            progress.Report(new ProcessingProgress(currentLine, lines.Length, "Processing markdown..."));
             currentLine++;
 
             string trimmedLine = line.Trim();
