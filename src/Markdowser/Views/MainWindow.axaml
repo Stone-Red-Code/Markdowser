@@ -5,14 +5,13 @@
         xmlns:utils="using:Markdowser.Utilities"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:md="https://github.com/whistyun/Markdown.Avalonia"
-        xmlns:ctxt="clr-namespace:ColorTextBlock.Avalonia;assembly=ColorTextBlock.Avalonia"
         xmlns:i="https://github.com/projektanker/icons.avalonia"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="Markdowser.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Icon="/Assets/Markdowser-Light-Transparent.ico"
-        Title="{Binding Title}">
+        Icon="{Binding Icon}"
+        Title="{Binding Title}"
+        Loaded="Window_Loaded" WindowState="{Binding WindowState}">
 
     <Design.DataContext>
         <!-- This only sets the DataContext for the previewer in an IDE,
@@ -24,8 +23,6 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary>
-                    <utils:HttpPathResolver x:Key="HttpPathResolver" />
-                    <cmd:HyperlinkCommand x:Key="HyperlinkCommand" />
                     <cmd:ChangeThemeCommand x:Key="ChangeThemeCommand" />
                     <cmd:HomeCommand x:Key="HomeCommand" />
                 </ResourceDictionary>
@@ -33,11 +30,31 @@
         </ResourceDictionary>
     </Window.Resources>
 
+    <Window.KeyBindings>
+        <KeyBinding Gesture="Ctrl+R" Command="{Binding Reload}" />
+        <KeyBinding Gesture="F5" Command="{Binding Reload}" />
+        <KeyBinding Gesture="Alt+Home" Command="{StaticResource HomeCommand}" />
+        <KeyBinding Gesture="Alt+H" Command="{StaticResource HomeCommand}" />
+        <KeyBinding Gesture="Alt+Left" Command="{Binding Back}" />
+        <KeyBinding Gesture="Alt+Right" Command="{Binding Forward}" />
+        <KeyBinding Gesture="Ctrl+T" Command="{Binding NewTab}" />
+        <KeyBinding Gesture="Ctrl+W" Command="{Binding CloseTab}" />
+        <KeyBinding Gesture="Alt+S" Command="{Binding ToggleSidePanel}" />
+        <KeyBinding Gesture="F11" Command="{Binding ToggleFullScreen}" />
+    </Window.KeyBindings>
+
     <Grid RowDefinitions="Auto, *, Auto">
         <Grid Grid.Row="0" ColumnDefinitions="*, Auto, Auto">
-            <TabControl Grid.Column="0" Theme="{DynamicResource ScrollTabControl}" SelectedItem="{Binding CurrentTab, Mode=TwoWay}" ItemsSource="{Binding Tabs}" />
-            <Button Grid.Column="1" Command="{Binding CloseTab}" IsEnabled="{Binding CloseTabEnabled}" HorizontalAlignment="Right" VerticalAlignment="Top" Height="32" i:Attached.Icon="fa-solid fa-xmark" />
-            <Button Grid.Column="2" Command="{Binding NewTab}" HorizontalAlignment="Right" VerticalAlignment="Top" Height="32" i:Attached.Icon="fa-solid fa-plus" />
+            <TabControl Grid.Column="0" SelectedItem="{Binding CurrentTab, Mode=TwoWay}" ItemsSource="{Binding Tabs}" IsEnabled="{Binding !IsBusy}" />
+            <Button Grid.Column="1" Command="{Binding CloseTab}" HorizontalAlignment="Right" VerticalAlignment="Stretch" i:Attached.Icon="fa-solid fa-xmark">
+                <Button.IsEnabled>
+                    <MultiBinding Converter="{x:Static BoolConverters.And}">
+                        <Binding Path="CloseTabEnabled" />
+                        <Binding Path="!IsBusy" />
+                    </MultiBinding>
+                </Button.IsEnabled>
+            </Button>
+            <Button Grid.Column="2" Command="{Binding NewTab}" HorizontalAlignment="Right" VerticalAlignment="Stretch" i:Attached.Icon="fa-solid fa-plus" IsEnabled="{Binding !IsBusy}" />
         </Grid>
 
         <Grid Grid.Row="1">
@@ -47,48 +64,8 @@
                 <ColumnDefinition Width="*" utils:ColumnDefinition.IsVisible="{Binding ShowSidePanel}" />
             </Grid.ColumnDefinitions>
 
-            <md:MarkdownScrollViewer Margin="10 0 10 10" IsEnabled="{Binding !IsBusy}" Markdown="{Binding Content}">
-                <md:MarkdownScrollViewer.Styles>
-                    <Style Selector="ctxt|CTextBlock">
-                        <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
-                    </Style>
-                    <Style Selector="ctxt|CTextBlock.Heading1">
-                        <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
-                    </Style>
-                    <Style Selector="ctxt|CTextBlock.Heading2">
-                        <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
-                    </Style>
-                    <Style Selector="ctxt|CTextBlock.Heading3">
-                        <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
-                    </Style>
-                    <Style Selector="ctxt|CTextBlock.Heading4">
-                        <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
-                    </Style>
-                    <Style Selector="ctxt|CTextBlock.Heading5">
-                        <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
-                    </Style>
-                    <Style Selector="ctxt|CTextBlock.Heading6">
-                        <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
-                    </Style>
-                    <Style Selector="ctxt|CHyperlink">
-                        <Setter Property="Foreground" Value="{DynamicResource SemiColorLink}" />
-                    </Style>
-                    <Style Selector="ctxt|CHyperlink:pointerover">
-                        <Setter Property="Foreground" Value="{DynamicResource SemiColorLinkPointerover}" />
-                    </Style>
-                    <Style Selector="ctxt|CHyperlink:pressed">
-                        <Setter Property="Foreground" Value="{DynamicResource SemiColorLinkVisited}" />
-                    </Style>
-                    <Style Selector="ctxt|CImage">
-                        <Setter Property="FittingWhenProtrude" Value="True" />
-                        <Setter Property="LayoutWidth" Value="500" />
-                        <Setter Property="SaveAspectRatio" Value="True" />
-                    </Style>
-                </md:MarkdownScrollViewer.Styles>
-                <md:MarkdownScrollViewer.Plugins>
-                    <md:MdAvPlugins PathResolver="{StaticResource HttpPathResolver}" HyperlinkCommand="{StaticResource HyperlinkCommand}" />
-                </md:MarkdownScrollViewer.Plugins>
-            </md:MarkdownScrollViewer>
+            <ContentControl IsEnabled="{Binding !IsBusy}" Content="{Binding Content}" />
+
             <GridSplitter Grid.Column="1" IsVisible="{Binding ShowSidePanel}" Background="{DynamicResource SemiColorTertiary}" ResizeDirection="Columns" />
             <TabControl  Grid.Column="2" IsVisible="{Binding ShowSidePanel}" Margin="10">
                 <TabItem Header="Settings">
@@ -96,14 +73,9 @@
                         <ContentControl Margin="0 10 0 0" Content="{Binding SettingsViewModel}" />
                     </ScrollViewer>
                 </TabItem>
-                <TabItem Header="Markdown">
+                <TabItem Header="Raw Content">
                     <ScrollViewer>
-                        <ContentControl Margin="0 10 0 0" Content="{Binding RawMarkdownViewModel}" />
-                    </ScrollViewer>
-                </TabItem>
-                <TabItem Header="HTML">
-                    <ScrollViewer>
-                        <ContentControl Margin="0 10 0 0" Content="{Binding RawHtmlViewModel}" />
+                        <SelectableTextBlock Margin="0 10 0 0" Text="{Binding RawContent}" TextWrapping="Wrap" />
                     </ScrollViewer>
                 </TabItem>
             </TabControl>
@@ -111,13 +83,27 @@
 
         <Border Grid.Row="2" BorderThickness="0 2 0 0" CornerRadius="0" BorderBrush="{DynamicResource SemiColorTertiary}">
             <Grid ColumnDefinitions="Auto, Auto, Auto, Auto, *, Auto">
-                <Button Grid.Column="0" i:Attached.Icon="fa-solid fa-caret-left" IsEnabled="{Binding BackEnabled}" Command="{Binding Back}" />
-                <Button Grid.Column="1" i:Attached.Icon="fa-solid fa-caret-right" IsEnabled="{Binding ForwardEnabled}" Command="{Binding Forward}" />
-                <Button Grid.Column="2" i:Attached.Icon="fa-solid fa-rotate-right" Command="{Binding Browse}" />
-                <Button Grid.Column="3" i:Attached.Icon="fa-solid fa-house" Command="{StaticResource HomeCommand}" />
+                <Button Grid.Column="0" i:Attached.Icon="fa-solid fa-caret-left" Command="{Binding Back}">
+                    <Button.IsEnabled>
+                        <MultiBinding Converter="{x:Static BoolConverters.And}">
+                            <Binding Path="BackEnabled" />
+                            <Binding Path="!IsBusy" />
+                        </MultiBinding>
+                    </Button.IsEnabled>
+                </Button>
+                <Button Grid.Column="1" i:Attached.Icon="fa-solid fa-caret-right" Command="{Binding Forward}">
+                    <Button.IsEnabled>
+                        <MultiBinding Converter="{x:Static BoolConverters.And}">
+                            <Binding Path="ForwardEnabled" />
+                            <Binding Path="!IsBusy" />
+                        </MultiBinding>
+                    </Button.IsEnabled>
+                </Button>
+                <Button Grid.Column="2" i:Attached.Icon="fa-solid fa-rotate-right" Command="{Binding Reload}" IsEnabled="{Binding !IsBusy}" />
+                <Button Grid.Column="3" i:Attached.Icon="fa-solid fa-house" Command="{StaticResource HomeCommand}" IsEnabled="{Binding !IsBusy}" />
 
                 <Grid Grid.Column="4">
-                    <TextBox x:Name="urlBar" IsVisible="{Binding !IsBusy}" Watermark="Search DuckDuckGo or type a URL" Text="{Binding Url}" BorderThickness="0">
+                    <TextBox IsVisible="{Binding !IsBusy}" Watermark="Search or type a URL" Text="{Binding Url}" BorderThickness="0">
                         <TextBox.KeyBindings>
                             <KeyBinding Gesture="Enter" Command="{Binding Browse}" />
                         </TextBox.KeyBindings>
@@ -128,7 +114,7 @@
                         </TextBox.Styles>
                     </TextBox>
 
-                    <ProgressBar IsVisible="{Binding IsBusy}" IsIndeterminate="{Binding ProgressIndeterminate}" ShowProgressText="{Binding !ProgressIndeterminate}" Maximum="100" Height="32" Grid.Row="2" Value="{Binding Progress}" />
+                    <ProgressBar IsVisible="{Binding IsBusy}" IsIndeterminate="{Binding ProgressIndeterminate}" ShowProgressText="{Binding !ProgressIndeterminate}" ProgressTextFormat="{Binding ProgressText}" Height="32" Grid.Row="2" Value="{Binding Progress}" Maximum="{Binding ProgressMax}" />
                 </Grid>
 
                 <Button Grid.Column="5" Command="{Binding ToggleSidePanel}" HorizontalAlignment="Right" i:Attached.Icon="fa-solid fa-table-columns" />

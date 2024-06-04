@@ -8,4 +8,12 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
     }
+
+    private void Window_Loaded(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (DataContext is ViewModels.MainWindowViewModel vm)
+        {
+            vm.InitializeWindowNotificationManager(this);
+        }
+    }
 }

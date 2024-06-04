@@ -8,8 +8,10 @@ It uses the [ReverseMarkdown](https://github.com/mysticmind/reversemarkdown-net)
 
 ## Setup
 
-1. Download one of the [releases](https://github.com/Stone-Red-Code/Markdowser/releases).
-1. Execute the `Markdowser-Installer.exe` file.
+1. Download the latest release 
+    - GitHub (Windows) [releases](https://github.com/Stone-Red-Code/Markdowser/releases)
+    - Chocolatey (Windows): `choco install Markdowser`
+    - Snapcraft (Linux): `snap install Markdowser`
 1. Enter a URL in the address bar.
 1. Enjoy!
 
@@ -31,3 +33,4 @@ It uses the [ReverseMarkdown](https://github.com/mysticmind/reversemarkdown-net)
 - [Icons.Avalonia](https://github.com/Projektanker/Icons.Avalonia) - [MIT](https://github.com/Projektanker/Icons.Avalonia/blob/main/LICENSE)
 - [Semi.Avalonia](https://github.com/irihitech/Semi.Avalonia) - [MIT](https://github.com/irihitech/Semi.Avalonia/blob/main/LICENSE)
 - [ReverseMarkdown](https://github.com/mysticmind/reversemarkdown-net) - [MIT](https://github.com/mysticmind/reversemarkdown-net/blob/master/LICENSE)
+- [Syroot.Windows.IO.KnownFolders](https://gitlab.com/Syroot/KnownFolders) - [MIT](https://gitlab.com/Syroot/KnownFolders/-/blob/master/LICENSE)

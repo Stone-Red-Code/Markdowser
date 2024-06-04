@@ -1,23 +1,21 @@
 ﻿using Avalonia.Controls;
+using Avalonia.Controls.Notifications;
 using Avalonia.Threading;
 
-using HtmlAgilityPack;
-
 using Markdowser.Models;
+using Markdowser.Processing;
+using Markdowser.Processing.Processors;
 using Markdowser.Utilities;
+using Markdowser.ViewModels.Content;
 
 using ReactiveUI;
 
 using System;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Reflection;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
@@ -26,45 +24,85 @@ namespace Markdowser.ViewModels;
 public partial class MainWindowViewModel : ViewModelBase
 {
     private readonly HttpClient httpClient = new(new HttpClientHandler() { AllowAutoRedirect = true });
-    private readonly ReverseMarkdown.Converter markdownConverter = new();
+    private readonly ContentProcessorManager contentProcessorManager = new();
+    private readonly CacheService cacheService = new CacheService();
 
-    private readonly StringBuilder html = new();
-    private StringBuilder? content;
     private TabItem currentTab = null!;
+    private WindowState windowState;
     private bool showSidePanel;
     private bool isBusy;
-    private int progress;
-    public ObservableCollection<TabItem> Tabs => GlobalState.Tabs;
-    public string Title => $"{nameof(Markdowser)} - {Assembly.GetExecutingAssembly().GetName().Version?.ToString()}";
+    private double progress;
+    private double progressMax;
+    private string progressText;
+    public ObservableCollection<TabItem> Tabs { get; } = [new TabItem() { Header = "New Tab" }];
 
     public TabItem CurrentTab
     {
         get => currentTab;
         set
         {
-            if (currentTab is not null)
-            {
-                currentTab.Tag = Url;
-            }
+            CurrentTabState.UrlChanged -= UrlChanged;
 
             _ = this.RaiseAndSetIfChanged(ref currentTab!, value);
+            this.RaisePropertyChanged(nameof(CurrentTabState));
+            this.RaisePropertyChanged(nameof(Url));
+            this.RaisePropertyChanged(nameof(BackEnabled));
+            this.RaisePropertyChanged(nameof(ForwardEnabled));
 
-            Url = currentTab?.Tag?.ToString() ?? string.Empty;
+            GlobalState.CurrentTabState = CurrentTabState;
+            CurrentTabState.UrlChanged += UrlChanged;
 
-            FetchUrl();
+            if (CurrentTabState.Content is null)
+            {
+                FetchUrl(true);
+            }
+            else
+            {
+                Content = CurrentTabState.Content;
+            }
         }
     }
 
-    public StringBuilder Content
+    public TabState CurrentTabState
     {
-        get => content ?? DefaultContent;
-        set => this.RaiseAndSetIfChanged(ref content, value);
+        get
+        {
+            if (CurrentTab is null)
+            {
+                return new();
+            }
+
+            return Dispatcher.UIThread.Invoke(() =>
+            {
+                CurrentTab.Tag ??= new TabState();
+                return (TabState)CurrentTab.Tag;
+            });
+        }
     }
+
+    public WindowState WindowState
+    {
+        get => windowState;
+        set => this.RaiseAndSetIfChanged(ref windowState, value);
+    }
+
+    public ContentViewModelBase Content
+    {
+        get => CurrentTabState.Content!;
+        set
+        {
+            CurrentTabState.Content = value;
+            this.RaisePropertyChanged();
+            this.RaisePropertyChanged(nameof(RawContent));
+        }
+    }
+
+    public string RawContent => string.IsNullOrWhiteSpace(Content.RawContent) ? "No raw content." : Content.RawContent;
 
     public string Url
     {
-        get => GlobalState.Url;
-        set => GlobalState.SetUrl(this, value);
+        get => CurrentTabState.Url;
+        set => CurrentTabState.SetUrl(value, this);
     }
 
     public bool ShowSidePanel
@@ -79,7 +117,7 @@ public partial class MainWindowViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref isBusy, value);
     }
 
-    public int Progress
+    public double Progress
     {
         get => progress;
         set
@@ -89,21 +127,32 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
+    public double ProgressMax
+    {
+        get => progressMax;
+        set => _ = this.RaiseAndSetIfChanged(ref progressMax, value);
+    }
+
+    public string ProgressText
+    {
+        get => progressText;
+        set => this.RaiseAndSetIfChanged(ref progressText, value);
+    }
+
     public SettingsViewModel SettingsViewModel => new SettingsViewModel();
-    public RawHtmlViewModel RawHtmlViewModel => new RawHtmlViewModel(html);
-    public RawMarkdownViewModel RawMarkdownViewModel => new RawMarkdownViewModel(() => Content);
     public bool CloseTabEnabled => Tabs.Count > 1;
-    public bool BackEnabled => GlobalState.BackHistory.Count > 0;
-    public bool ForwardEnabled => GlobalState.ForwardHistory.Count > 0;
+    public bool BackEnabled => CurrentTabState.BackHistory.Count > 0;
+    public bool ForwardEnabled => CurrentTabState.ForwardHistory.Count > 0;
     public bool ProgressIndeterminate => Progress == 0;
-    public ICommand Browse => ReactiveCommand.Create(FetchUrl);
+    public ICommand Browse => ReactiveCommand.Create(() => FetchUrl(true));
+    public ICommand Reload => ReactiveCommand.Create(() => FetchUrl(false));
 
     public ICommand Back => ReactiveCommand.Create(() =>
     {
-        if (GlobalState.BackHistory.Count > 0)
+        if (CurrentTabState.BackHistory.Count > 0)
         {
-            GlobalState.ForwardHistory.Push(GlobalState.Url);
-            Url = GlobalState.BackHistory.Pop();
+            CurrentTabState.ForwardHistory.Push(CurrentTabState.Url);
+            Url = CurrentTabState.BackHistory.Pop();
             FetchUrl();
 
             this.RaisePropertyChanged(nameof(BackEnabled));
@@ -113,10 +162,10 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public ICommand Forward => ReactiveCommand.Create(() =>
     {
-        if (GlobalState.ForwardHistory.Count > 0)
+        if (CurrentTabState.ForwardHistory.Count > 0)
         {
-            GlobalState.BackHistory.Push(GlobalState.Url);
-            Url = GlobalState.ForwardHistory.Pop();
+            CurrentTabState.BackHistory.Push(CurrentTabState.Url);
+            Url = CurrentTabState.ForwardHistory.Pop();
             FetchUrl();
 
             this.RaisePropertyChanged(nameof(ForwardEnabled));
@@ -128,57 +177,60 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public ICommand CloseTab => ReactiveCommand.Create(() =>
     {
+        if (IsBusy)
+        {
+            WindowNotificationManager.Show(new Notification("Busy", "The browser is currently busy.", NotificationType.Warning));
+            return;
+        }
+
         if (Tabs.Count > 1)
         {
             int currentIndex = Tabs.IndexOf(CurrentTab);
-            _ = Tabs.Remove(CurrentTab);
 
             CurrentTab = currentIndex > 0 ? Tabs[currentIndex - 1] : Tabs[0];
+
+            Tabs.RemoveAt(currentIndex);
+
             this.RaisePropertyChanged(nameof(CloseTabEnabled));
         }
     });
 
     public ICommand NewTab => ReactiveCommand.Create(() =>
     {
+        if (IsBusy)
+        {
+            WindowNotificationManager.Show(new Notification("Busy", "The browser is currently busy.", NotificationType.Warning));
+            return;
+        }
+
         TabItem tab = new() { Header = "New Tab", Name = Guid.NewGuid().ToString() };
         Tabs.Add(tab);
         CurrentTab = tab;
         this.RaisePropertyChanged(nameof(CloseTabEnabled));
     });
 
-    private StringBuilder DefaultContent => new StringBuilder()
+    public ICommand ToggleFullScreen => ReactiveCommand.Create(() => WindowState = WindowState == WindowState.FullScreen ? WindowState.Normal : WindowState.FullScreen);
+
+    private MarkdownContentViewModel DefaultContent => new("New Tab", new StringBuilder()
         .AppendLine($"![Logo](avares://Markdowser/Assets/Markdowser-{(Settings.Current.DarkMode ? "Dark" : "Light")}-Transparent.png)")
         .AppendLine()
         .AppendLine($"{nameof(Markdowser)} {Assembly.GetExecutingAssembly().GetName().Version?.ToString()}\n")
         .AppendLine("A markdown web browser.\n")
-        .AppendLine("[GitHub](https://github.me.stone-red.net/Markdowser)");
+        .AppendLine("[GitHub](https://github.me.stone-red.net/Markdowser)").ToString());
 
     public MainWindowViewModel()
     {
-        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd($"{nameof(Markdowser)}/{Assembly.GetExecutingAssembly().GetName().Version?.ToString()}");
         httpClient.Timeout = TimeSpan.FromSeconds(10);
 
-        markdownConverter.Config.UnknownTags = ReverseMarkdown.Config.UnknownTagsOption.Bypass;
-        markdownConverter.Config.SuppressDivNewlines = false;
-        markdownConverter.Config.SmartHrefHandling = false;
+        Tabs[0].Tag = new TabState() { Content = DefaultContent };
 
-        GlobalState.UrlChanged += (sender, url) =>
+        contentProcessorManager.RegisterProcessor(new HtmlProcessor());
+        contentProcessorManager.RegisterProcessor(new CommonImageProcessor());
+        contentProcessorManager.RegisterProcessor(new DownloadProcessor());
+
+        GlobalState.ThemeChanged += (s, e) =>
         {
-            this.RaisePropertyChanged(nameof(ForwardEnabled));
-            this.RaisePropertyChanged(nameof(BackEnabled));
-            this.RaisePropertyChanged(nameof(Url));
-
-            if (sender == this)
-            {
-                return;
-            }
-
-            FetchUrl();
-        };
-
-        GlobalState.ContentReload += (sender, _) =>
-        {
-            this.RaisePropertyChanged(nameof(Content));
+            this.RaisePropertyChanged(nameof(Icon));
         };
     }
 
@@ -187,139 +239,172 @@ public partial class MainWindowViewModel : ViewModelBase
         return Uri.TryCreate(uriString, UriKind.Absolute, out uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
     }
 
-    [GeneratedRegex("!\\[(.*?)\\]\\((.*?)\\)")]
-    private static partial Regex MarkdownImage();
-
-    private void FetchUrl()
+    private void FetchUrl(bool useCache = true)
     {
+        if (IsBusy)
+        {
+            WindowNotificationManager.Show(new Notification("Busy", "The browser is currently busy.", NotificationType.Warning));
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(Url))
         {
-            content = null;
-            _ = html.Clear();
-            ContentChanged();
-            Debug.WriteLine("URL is empty.");
+            Content = DefaultContent;
+            Logger.LogDebug("URL is empty.");
             CurrentTab.Header = "New Tab";
             return;
         }
 
         if (!IsValidHttpUri(Url, out _))
         {
-            // Search with duckduckgo
-            Url = $"https://duckduckgo.com/html/?kd=-1&k1=-1&q={Uri.EscapeDataString(Url)}";
+            if (Url.StartsWith("//"))
+            {
+                Url = $"https:{Url}";
+            }
+            else
+            {
+                // Search with duckduckgo
+                try
+                {
+                    Url = string.Format(Settings.Current.SearchEngineUrl, Uri.EscapeDataString(Url));
+                }
+                catch (FormatException ex)
+                {
+                    WindowNotificationManager.Show(new Notification("Invalid Search Engine URL", $"{ex.Message}", NotificationType.Error));
+                }
+            }
         }
 
-        content ??= new StringBuilder();
-        _ = content.Clear();
-        _ = html.Clear();
+        httpClient.DefaultRequestHeaders.UserAgent.Clear();
+        if (!httpClient.DefaultRequestHeaders.UserAgent.TryParseAdd(Settings.Current.UserAgent))
+        {
+            WindowNotificationManager.Show(new Notification("Invalid User Agent", "Failed to set user agent.", NotificationType.Error));
+            return;
+        }
 
         IsBusy = true;
         Progress = 0;
 
         _ = Task.Run(async () =>
         {
-            Debug.WriteLine("Fetching URL...");
+            Logger.LogInfo($"Fetching URL: {Url}");
 
             try
             {
-                HttpResponseMessage httpResponseMessage = await httpClient.GetAsync(Url);
-
-                Url = httpResponseMessage.RequestMessage?.RequestUri?.ToString() ?? Url;
-
-                if (!httpResponseMessage.IsSuccessStatusCode)
+                ContentViewModelBase? cachedContent = cacheService.Get(Url);
+                if (cachedContent is not null && useCache)
                 {
-                    IsBusy = false;
-                    _ = content.AppendLine($"# {(int)httpResponseMessage.StatusCode} {httpResponseMessage.StatusCode}");
-                    _ = content.AppendLine($"Failed to fetch URL: {httpResponseMessage.ReasonPhrase}");
-                    ContentChanged();
-                    return;
+                    Content = cachedContent;
+                }
+                else
+                {
+                    HttpResponseMessage httpResponseMessage = await httpClient.GetAsync(Url, HttpCompletionOption.ResponseHeadersRead);
+
+                    string? newUrl = httpResponseMessage.RequestMessage?.RequestUri?.ToString();
+                    string oldUrl = Url;
+
+                    if (newUrl is not null && newUrl != Url)
+                    {
+                        Dispatcher.UIThread.Post(() => WindowNotificationManager.Show(new Notification("Redirected", $"Redirected from\n{oldUrl}\nto\n{newUrl}", NotificationType.Warning)));
+                        Url = newUrl;
+                    }
+
+                    if (!httpResponseMessage.IsSuccessStatusCode)
+                    {
+                        IsBusy = false;
+
+                        StringBuilder errorMessage = new();
+
+                        _ = errorMessage.AppendLine($"# {(int)httpResponseMessage.StatusCode} {httpResponseMessage.StatusCode}");
+                        _ = errorMessage.AppendLine($"Failed to fetch URL: {httpResponseMessage.ReasonPhrase}");
+
+                        Content = new MarkdownContentViewModel("Error", errorMessage.ToString());
+                        return;
+                    }
+
+                    Content = await contentProcessorManager.ProcessContent(httpResponseMessage, new Progress<ProcessingProgress>(UpdateProgress));
+
+                    if (Content.Cacheable)
+                    {
+                        if (oldUrl != Url)
+                        {
+                            cacheService.Set(oldUrl, Content);
+                        }
+
+                        cacheService.Set(Url, Content);
+                    }
                 }
 
-                long length = httpResponseMessage.Content.Headers.ContentLength ?? 0;
+                Dispatcher.UIThread.Post(() => CurrentTab.Header = Content.Title);
 
-                using Stream contentStream = await httpResponseMessage.Content.ReadAsStreamAsync();
-                using StreamReader streamReader = new(contentStream);
-
-                while (!streamReader.EndOfStream)
-                {
-                    _ = html.AppendLine(await streamReader.ReadLineAsync());
-                    Progress = (int)((double)contentStream.Position / length * 100);
-                }
-
-                HtmlDocument htmlDoc = new HtmlDocument();
-                htmlDoc.LoadHtml(html.ToString());
-                string title = htmlDoc.DocumentNode.SelectSingleNode("html/head/title")?.InnerText ?? Url;
-
-                Dispatcher.UIThread.Post(() =>
-                {
-                    CurrentTab.Header = title?.Trim() ?? Url;
-                });
+                Logger.LogInfo($"Fetched URL: {Url}");
             }
             catch (HttpRequestException e)
             {
-                IsBusy = false;
+                StringBuilder errorMessage = new();
 
                 if (e.StatusCode is not null)
                 {
-                    _ = content.AppendLine($"# {(int)e.StatusCode} {e.StatusCode}");
+                    _ = errorMessage.AppendLine($"# {(int)e.StatusCode} {e.StatusCode}");
+                    Dispatcher.UIThread.Post(() => CurrentTab.Header = $"Error: {(int)e.StatusCode} {e.StatusCode}");
+                }
+                else
+                {
+                    Dispatcher.UIThread.Post(() => CurrentTab.Header = $"Error: {e.GetType().Name}");
                 }
 
-                _ = content.AppendLine($"# {e.HttpRequestError}");
-                _ = content.AppendLine($"Failed to fetch URL: {e.Message}");
-                ContentChanged();
+                _ = errorMessage.AppendLine($"# {e.HttpRequestError}");
+                _ = errorMessage.AppendLine($"Failed to fetch URL: {e.Message}");
+
+                Content = new MarkdownContentViewModel("Error", errorMessage.ToString());
+
+                Logger.LogError(e.Message);
             }
             catch (Exception e)
             {
-                IsBusy = false;
-                _ = content.AppendLine($"# {e.GetType().Name}");
-                _ = content.AppendLine($"Failed to fetch URL: {e.Message}");
-                ContentChanged();
+                StringBuilder errorMessage = new();
+
+                _ = errorMessage.AppendLine($"# {e.GetType().Name}");
+                _ = errorMessage.AppendLine($"Failed to fetch URL: {e.Message}");
+
+                Content = new MarkdownContentViewModel("Error", errorMessage.ToString());
+                Dispatcher.UIThread.Post(() => CurrentTab.Header = $"Error: {e.GetType().Name}");
+
+                Logger.LogError(e.Message);
             }
-
-            Progress = 0;
-
-            Debug.WriteLine("Converting HTML to markdown...");
-
-            string markdown = markdownConverter.Convert(html.ToString());
-
-            Debug.WriteLine("Processing markdown...");
-
-            int currentLine = 0;
-
-            string[] lines = markdown.Split('\n');
-            foreach (string line in lines)
+            finally
             {
-                Progress = (int)((double)currentLine / lines.Length * 100);
-                currentLine++;
-
-                string trimmedLine = line.Trim();
-
-                if (trimmedLine.All(c => c == '#'))
-                {
-                    _ = Content.Append(trimmedLine);
-                    continue;
-                }
-                else if (MarkdownImage().IsMatch(trimmedLine))
-                {
-                    _ = content.AppendLine()
-                    .Append(trimmedLine)
-                    .AppendLine()
-                    .AppendLine();
-                    continue;
-                }
-
-                _ = content.AppendLine(trimmedLine);
+                IsBusy = false;
             }
-
-            ContentChanged();
-
-            IsBusy = false;
         });
     }
 
-    private void ContentChanged()
+    private void UpdateProgress(ProcessingProgress progress)
     {
-        this.RaisePropertyChanged(nameof(Content));
-        this.RaisePropertyChanged(nameof(RawHtmlViewModel));
-        this.RaisePropertyChanged(nameof(RawMarkdownViewModel));
+        if (progress.IsBytes)
+        {
+            ProgressText = $"{progress.Message} ({{1:0}}%) {BytesToString.Convert((long)Progress)}/{BytesToString.Convert((long)ProgressMax)}";
+        }
+        else
+        {
+            ProgressText = $"{progress.Message} ({{1:0}}%) {{0}}/{{3}}";
+        }
+
+        ProgressMax = progress.Total;
+        Progress = progress.Current;
+    }
+
+    private void UrlChanged(object? sender, EventArgs e)
+    {
+        this.RaisePropertyChanged(nameof(ForwardEnabled));
+        this.RaisePropertyChanged(nameof(BackEnabled));
+        this.RaisePropertyChanged(nameof(Url));
+
+        if (sender == this)
+        {
+            return;
+        }
+
+        FetchUrl();
     }
 }

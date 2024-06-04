@@ -13,7 +13,7 @@ internal static class ColumnDefinition
         }
         else if (!visibility)
         {
-            _ = element.SetValue(LastWidthProperty, element.GetValue(Avalonia.Controls.ColumnDefinition.WidthProperty));
+            _ = element.SetValue(LastWidthProperty!, element.GetValue(Avalonia.Controls.ColumnDefinition.WidthProperty));
             _ = element.SetValue(Avalonia.Controls.ColumnDefinition.WidthProperty, ZeroWidth);
         }
         return visibility;

@@ -1,51 +1,55 @@
-﻿using Avalonia.Controls;
+﻿using CuteUtils.Logging;
+
+using Markdowser.Models;
 
 using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Markdowser.Utilities;
 
-[SuppressMessage("Major Code Smell", "S4220:Events should have proper arguments", Justification = "<Pending>")]
 internal static class GlobalState
 {
-    public static event EventHandler<string>? UrlChanged;
+    public static event EventHandler? ThemeChanged;
 
-    public static event EventHandler? ContentReload;
+    public static TabState CurrentTabState { get; internal set; } = new();
 
-    private static string url = string.Empty;
-
-    public static Stack<string> BackHistory { get; } = new();
-
-    public static Stack<string> ForwardHistory { get; } = new();
-
-    public static string Url
+    public static Logger Logger { get; } = new()
     {
-        get => url;
-        set
+        Config = new()
         {
-            if (url != value)
+            DebugConfig = new()
             {
-                BackHistory.Push(url);
-                ForwardHistory.Clear();
+                LogTarget = LogTarget.DebugConsole
+            },
+            InfoConfig = new()
+            {
+                LogTarget = LogTarget.DebugConsole | LogTarget.File,
+                FilePath = Configuration.LogFilePath
+            },
+            WarnConfig = new()
+            {
+                LogTarget = LogTarget.DebugConsole | LogTarget.File,
+                FilePath = Configuration.LogFilePath
+            },
+            ErrorConfig = new()
+            {
+                LogTarget = LogTarget.DebugConsole | LogTarget.File,
+                FilePath = Configuration.LogFilePath
+            },
+            FatalConfig = new()
+            {
+                LogTarget = LogTarget.DebugConsole | LogTarget.File,
+                FilePath = Configuration.LogFilePath
+            },
+            FormatConfig = new()
+            {
+                DebugConsoleFormat = new LogFormatBuilder().DateTime().Text(" ").LogSeverity(padding: -6).FilePath().Text(":").MemberName().Text(":").LineNumber().Text(Environment.NewLine).Message(),
+                FileFormat = new LogFormatBuilder().DateTime().Text(" ").LogSeverity(padding: -6).FilePath().Text(":").MemberName().Text(":").LineNumber().Text(Environment.NewLine).Message(),
             }
-
-            url = value;
-            UrlChanged?.Invoke(null, url);
         }
-    }
+    };
 
-    public static ObservableCollection<TabItem> Tabs { get; internal set; } = [new TabItem() { Header = "New Tab" }];
-
-    internal static void SetUrl(object sender, string url)
+    public static void InvokeThemeChanged()
     {
-        GlobalState.url = url;
-        UrlChanged?.Invoke(sender, url);
-    }
-
-    internal static void ReloadContent(object sender)
-    {
-        ContentReload?.Invoke(sender, EventArgs.Empty);
+        ThemeChanged?.Invoke(null, EventArgs.Empty);
     }
 }

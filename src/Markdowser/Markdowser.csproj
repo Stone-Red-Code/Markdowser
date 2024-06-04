@@ -7,6 +7,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <Version>0.1.0.0</Version>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -30,11 +31,22 @@
     <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
     <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.0.10" />
     <PackageReference Include="Avalonia.ReactiveUI" Version="11.0.10" />
+    <PackageReference Include="CuteUtils" Version="1.0.0" />
     <PackageReference Include="Markdown.Avalonia" Version="11.0.2" />
     <PackageReference Include="Projektanker.Icons.Avalonia" Version="9.1.2" />
     <PackageReference Include="Projektanker.Icons.Avalonia.FontAwesome" Version="9.1.2" />
     <PackageReference Include="Projektanker.Icons.Avalonia.MaterialDesign" Version="9.1.2" />
     <PackageReference Include="ReverseMarkdown" Version="4.3.0" />
     <PackageReference Include="Semi.Avalonia" Version="11.0.7.1" />
+    <PackageReference Include="Syroot.Windows.IO.KnownFolders" Version="1.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Views\Content\CommonImageContentView.axaml.cs">
+      <DependentUpon>CommonImageContentView.axaml</DependentUpon>
+    </Compile>
+    <Compile Update="Views\Content\MarkdownContentView.axaml.cs">
+      <DependentUpon>MarkdownContentView.axaml</DependentUpon>
+    </Compile>
   </ItemGroup>
 </Project>

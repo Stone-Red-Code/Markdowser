@@ -1,10 +1,15 @@
-﻿using Avalonia.Platform;
+﻿using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Controls.Notifications;
+using Avalonia.Platform;
+using Avalonia.Threading;
 
 using Markdown.Avalonia.Utils;
+
 using Markdowser.Models;
+
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -31,15 +36,27 @@ public class HttpPathResolver : IPathResolver
 
         if (!Uri.IsWellFormedUriString(relativeOrAbsolutePath, UriKind.Absolute))
         {
-            relativeOrAbsolutePath = new Uri(new Uri(GlobalState.Url), relativeOrAbsolutePath).ToString();
+            relativeOrAbsolutePath = new Uri(new Uri(GlobalState.CurrentTabState.Url), relativeOrAbsolutePath).ToString();
         }
 
-        Debug.WriteLine($"Resolving image: {relativeOrAbsolutePath}");
+        GlobalState.Logger.LogDebug($"Resolving image: {relativeOrAbsolutePath}");
 
-        HttpResponseMessage httpResponseMessage = await httpClient.GetAsync(relativeOrAbsolutePath)!;
+        HttpResponseMessage httpResponseMessage;
+
+        try
+        {
+            httpResponseMessage = await httpClient.GetAsync(relativeOrAbsolutePath)!;
+        }
+        catch (Exception ex)
+        {
+            // error with inluding url and message
+            ShowError($"Failed to fetch image: {ex.Message}\n{relativeOrAbsolutePath} - ");
+            return GetLogo();
+        }
 
         if (!httpResponseMessage.IsSuccessStatusCode)
         {
+            ShowError($"Failed to fetch image: {httpResponseMessage.ReasonPhrase}\n{relativeOrAbsolutePath}");
             return GetLogo();
         }
 
@@ -54,5 +71,15 @@ public class HttpPathResolver : IPathResolver
         }
 
         return AssetLoader.Open(new Uri("avares://Markdowser/Assets/Markdowser-Light-Transparent.png"))!;
+    }
+
+    private static void ShowError(string message)
+    {
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop && desktop.MainWindow?.DataContext is ViewModels.MainWindowViewModel vm)
+        {
+            Dispatcher.UIThread.Post(() => vm.WindowNotificationManager.Show(new Notification("Error", message, NotificationType.Error)));
+        }
+
+        GlobalState.Logger.LogError(message);
     }
 }

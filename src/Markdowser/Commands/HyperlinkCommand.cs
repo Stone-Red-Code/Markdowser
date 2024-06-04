@@ -2,6 +2,7 @@
 
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Windows.Input;
 
 namespace Markdowser.Commands;
@@ -23,19 +24,35 @@ public class HyperlinkCommand : ICommand
     {
         if (parameter is string url)
         {
-            Debug.WriteLine($"Hyperlink clicked: {url}");
+            GlobalState.Logger.LogDebug($"Hyperlink clicked: {url}");
 
             if (Uri.IsWellFormedUriString(url, UriKind.Absolute))
             {
-                GlobalState.Url = url;
+                GlobalState.CurrentTabState.Url = url;
             }
             else if (Uri.IsWellFormedUriString(url, UriKind.Relative) || url.StartsWith('/'))
             {
-                GlobalState.Url = new Uri(new Uri(GlobalState.Url), url).ToString();
+                GlobalState.CurrentTabState.Url = new Uri(new Uri(GlobalState.CurrentTabState.Url), url).ToString();
+            }
+            else if (File.Exists(url))
+            {
+                ProcessStartInfo processStartInfo = new()
+                {
+                    FileName = url,
+                    UseShellExecute = true
+                };
+                try
+                {
+                    _ = Process.Start(processStartInfo);
+                }
+                catch (Exception ex)
+                {
+                    GlobalState.Logger.LogError(ex.Message);
+                }
             }
             else
             {
-                Debug.WriteLine($"Invalid URL: {url}");
+                GlobalState.Logger.LogDebug($"Invalid URL: {url}");
             }
         }
     }
