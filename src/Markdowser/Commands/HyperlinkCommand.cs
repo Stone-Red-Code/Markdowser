@@ -1,6 +1,8 @@
 ﻿using Markdowser.Utilities;
 
 using System;
+using System.Diagnostics;
+using System.IO;
 using System.Windows.Input;
 
 namespace Markdowser.Commands;
@@ -31,6 +33,22 @@ public class HyperlinkCommand : ICommand
             else if (Uri.IsWellFormedUriString(url, UriKind.Relative) || url.StartsWith('/'))
             {
                 GlobalState.CurrentTabState.Url = new Uri(new Uri(GlobalState.CurrentTabState.Url), url).ToString();
+            }
+            else if (File.Exists(url))
+            {
+                ProcessStartInfo processStartInfo = new()
+                {
+                    FileName = url,
+                    UseShellExecute = true
+                };
+                try
+                {
+                    _ = Process.Start(processStartInfo);
+                }
+                catch (Exception ex)
+                {
+                    GlobalState.Logger.LogError(ex.Message);
+                }
             }
             else
             {
