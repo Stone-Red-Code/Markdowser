@@ -31,7 +31,9 @@ public partial class MainWindowViewModel : ViewModelBase
     private WindowState windowState;
     private bool showSidePanel;
     private bool isBusy;
-    private int progress;
+    private double progress;
+    private double progressMax;
+    private string progressText;
     public ObservableCollection<TabItem> Tabs { get; } = [new TabItem() { Header = "New Tab" }];
 
     public TabItem CurrentTab
@@ -108,7 +110,7 @@ public partial class MainWindowViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref isBusy, value);
     }
 
-    public int Progress
+    public double Progress
     {
         get => progress;
         set
@@ -116,6 +118,18 @@ public partial class MainWindowViewModel : ViewModelBase
             _ = this.RaiseAndSetIfChanged(ref progress, value);
             this.RaisePropertyChanged(nameof(ProgressIndeterminate));
         }
+    }
+
+    public double ProgressMax
+    {
+        get => progressMax;
+        set => _ = this.RaiseAndSetIfChanged(ref progressMax, value);
+    }
+
+    public string ProgressText
+    {
+        get => progressText;
+        set => this.RaiseAndSetIfChanged(ref progressText, value);
     }
 
     public SettingsViewModel SettingsViewModel => new SettingsViewModel();
@@ -205,6 +219,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         contentProcessorManager.RegisterProcessor(new HtmlProcessor());
         contentProcessorManager.RegisterProcessor(new CommonImageProcessor());
+        contentProcessorManager.RegisterProcessor(new DownloadProcessor());
 
         GlobalState.ThemeChanged += (s, e) =>
         {
@@ -276,7 +291,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 }
                 else
                 {
-                    HttpResponseMessage httpResponseMessage = await httpClient.GetAsync(Url);
+                    HttpResponseMessage httpResponseMessage = await httpClient.GetAsync(Url, HttpCompletionOption.ResponseHeadersRead);
 
                     string? newUrl = httpResponseMessage.RequestMessage?.RequestUri?.ToString();
                     string oldUrl = Url;
@@ -300,14 +315,17 @@ public partial class MainWindowViewModel : ViewModelBase
                         return;
                     }
 
-                    Content = await contentProcessorManager.ProcessContent(httpResponseMessage, new Progress<ProcessingProgress>(p => Progress = p.Percentage));
+                    Content = await contentProcessorManager.ProcessContent(httpResponseMessage, new Progress<ProcessingProgress>(UpdateProgress));
 
-                    if (oldUrl != Url)
+                    if (Content.Cacheable)
                     {
-                        cacheService.Set(oldUrl, Content);
-                    }
+                        if (oldUrl != Url)
+                        {
+                            cacheService.Set(oldUrl, Content);
+                        }
 
-                    cacheService.Set(Url, Content);
+                        cacheService.Set(Url, Content);
+                    }
                 }
 
                 Dispatcher.UIThread.Post(() => CurrentTab.Header = Content.Title);
@@ -352,6 +370,21 @@ public partial class MainWindowViewModel : ViewModelBase
                 IsBusy = false;
             }
         });
+    }
+
+    private void UpdateProgress(ProcessingProgress progress)
+    {
+        Progress = progress.Current;
+        ProgressMax = progress.Total;
+
+        if (progress.IsBytes)
+        {
+            ProgressText = $"{progress.Message} ({{1:0}}%) {BytesToString.Convert((long)Progress)}/{BytesToString.Convert((long)ProgressMax)}";
+        }
+        else
+        {
+            ProgressText = $"{progress.Message} ({{1:0}}%) {{0}}/{{3}}";
+        }
     }
 
     private void UrlChanged(object? sender, EventArgs e)

@@ -114,7 +114,7 @@
                         </TextBox.Styles>
                     </TextBox>
 
-                    <ProgressBar IsVisible="{Binding IsBusy}" IsIndeterminate="{Binding ProgressIndeterminate}" ShowProgressText="{Binding !ProgressIndeterminate}" Maximum="100" Height="32" Grid.Row="2" Value="{Binding Progress}" />
+                    <ProgressBar IsVisible="{Binding IsBusy}" IsIndeterminate="{Binding ProgressIndeterminate}" ShowProgressText="{Binding !ProgressIndeterminate}" ProgressTextFormat="{Binding ProgressText}" Height="32" Grid.Row="2" Value="{Binding Progress}" Maximum="{Binding ProgressMax}" />
                 </Grid>
 
                 <Button Grid.Column="5" Command="{Binding ToggleSidePanel}" HorizontalAlignment="Right" i:Attached.Icon="fa-solid fa-table-columns" />

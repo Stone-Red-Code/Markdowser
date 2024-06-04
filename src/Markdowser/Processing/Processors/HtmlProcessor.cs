@@ -49,7 +49,7 @@ internal partial class HtmlProcessor : IContentProcessor
         {
             _ = html.AppendLine(await streamReader.ReadLineAsync());
 
-            progress.Report(new ProcessingProgress(length, contentStream.Position));
+            progress.Report(new ProcessingProgress(contentStream.Position, length));
         }
 
         HtmlDocument htmlDoc = new HtmlDocument();
