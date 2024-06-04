@@ -1,0 +1,45 @@
+name: markdowser # you probably want to 'snapcraft register <name>'
+version: "1.0.0.0" # just for humans, typically '1.2+git' or '1.3.2'
+grade: stable # must be 'stable' to release into candidate/stable channels
+summary: A lightweight cross-platform IP scanner # 79 char long summary
+description: |
+  **Setup**
+
+  1. Download the latest release
+    - GitHub (Windows): https://github.com/Stone-Red-Code/Markdowser/releases
+    - Chocolatey (Windows): `choco install Markdowser`
+    - Snapcraft (Linux): `snap install Markdowser`
+  2. Enter a URL in the address bar.
+  3. Enjoy!
+
+  **Third party licenses**
+
+  - Avalonia (https://github.com/AvaloniaUI/Avalonia) - MIT (https://github.com/AvaloniaUI/Avalonia/blob/master/licence.md)
+  - Icons.Avalonia (https://github.com/Projektanker/Icons.Avalonia) - MIT (https://github.com/Projektanker/Icons.Avalonia/blob/main/LICENSE)
+  - Semi.Avalonia (https://github.com/irihitech/Semi.Avalonia) - MIT (https://github.com/irihitech/Semi.Avalonia/blob/main/LICENSE)
+  - ReverseMarkdown (https://github.com/mysticmind/reversemarkdown-net) - MIT (https://github.com/mysticmind/reversemarkdown-net/blob/master/LICENSE)
+  - Syroot.Windows.IO.KnownFolders (https://gitlab.com/Syroot/KnownFolders) - MIT (https://gitlab.com/Syroot/KnownFolders/-/blob/master/LICENSE)
+
+base: core22 # the base snap is the execution environment for this snap
+
+architectures:
+  - build-on: amd64
+  - build-on: arm64
+
+confinement: strict # use 'strict' once you have the right plugs and slots
+
+parts:
+  markdowser:
+    # See 'snapcraft plugins'
+    plugin: dotnet
+    dotnet-build-configuration: Release
+    dotnet-self-contained-runtime-identifier: linux-x64
+    source: ./src/Markdowser
+    build-packages:
+      - dotnet-sdk-8.0
+    stage-packages:
+      - libicu70
+
+apps:
+  markdowser:
+    command: markdowser
