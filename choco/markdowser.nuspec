@@ -68,9 +68,16 @@ enclosed in quotation marks, you should use an editor that supports UTF-8, not t
     what url are the software docs located?</docsUrl>-->
     <!--<mailingListUrl></mailingListUrl>-->
     <bugTrackerUrl>https://github.com/Stone-Red-Code/Markdowser/issues</bugTrackerUrl>
-    <tags>Markdowser arp</tags>
-    <summary>A lightweight cross-platform IP scanner</summary>
+    <tags>markdowser</tags>
+    <summary>A web browser that renders markdown instead of HTML</summary>
     <description>
+      A web browser that renders markdown instead of HTML
+
+      **What is it?**
+
+      Markdowser is a web browser that renders Markdown instead of HTML.
+      It uses the ReverseMarkdown library to convert HTML websites to Markdown. This gets rid of all the clutter and is supposed to make the content more readable and consistent across different websites.
+
       **Setup**
 
       1. Download the latest release
