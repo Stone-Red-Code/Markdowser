@@ -33,7 +33,7 @@ enclosed in quotation marks, you should use an editor that supports UTF-8, not t
     .template -->
     <!-- If the software is cross-platform, attempt to use the same id as the debian/rpm package(s)
     if possible. -->
-    <id>Markdowser</id>
+    <id>markdowser</id>
     <!-- version should MATCH as closely as possible with the underlying software -->
     <!-- Is the version a prerelease of a version?
     https://docs.nuget.org/create/versioning#creating-prerelease-packages -->
@@ -58,7 +58,7 @@ enclosed in quotation marks, you should use an editor that supports UTF-8, not t
     More information can be found here:
     https://docs.chocolatey.org/en-us/create/create-packages#package-icon-guidelines -->
     <!-- Here is an example using Githack -->
-    <!--<iconUrl>http://rawcdn.githack.com/__REPLACE_YOUR_REPO__/master/icons/Markdowser.png</iconUrl>-->
+    <iconUrl>https://content.stone-red.net/Markdowser-1-1.png</iconUrl>
     <!-- <copyright>Year Software Vendor</copyright> -->
     <!-- If there is a license Url available, it is required for the community feed -->
     <licenseUrl>https://github.com/Stone-Red-Code/Markdowser/blob/main/LICENSE</licenseUrl>
@@ -67,10 +67,17 @@ enclosed in quotation marks, you should use an editor that supports UTF-8, not t
     <!--<docsUrl>At
     what url are the software docs located?</docsUrl>-->
     <!--<mailingListUrl></mailingListUrl>-->
-    <!--<bugTrackerUrl></bugTrackerUrl>-->
-    <tags>Markdowser arp</tags>
-    <summary>A lightweight cross-platform IP scanner</summary>
+    <bugTrackerUrl>https://github.com/Stone-Red-Code/Markdowser/issues</bugTrackerUrl>
+    <tags>markdowser</tags>
+    <summary>A web browser that renders markdown instead of HTML</summary>
     <description>
+      A web browser that renders markdown instead of HTML
+
+      **What is it?**
+
+      Markdowser is a web browser that renders Markdown instead of HTML.
+      It uses the ReverseMarkdown library to convert HTML websites to Markdown. This gets rid of all the clutter and is supposed to make the content more readable and consistent across different websites.
+
       **Setup**
 
       1. Download the latest release
